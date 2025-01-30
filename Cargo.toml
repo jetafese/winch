@@ -1,0 +1,18 @@
+[package]
+authors = ["The Winch Project Developers"]
+name = "winch-codegen"
+description = "Winch code generation library"
+license = "Apache-2.0 WITH LLVM-exception"
+repository = "https://github.com/bytecodealliance/wasmtime"
+version = "0.1.0"
+rust-version = "1.64.0"
+edition = "2021"
+
+[dependencies]
+smallvec = { version = "1.6.1", features = ["union"] }
+anyhow = { version = "1.0.93", default-features = false }
+
+[features]
+x64 = []
+arm64 = []
+all-arch = ["x64", "arm64"]
