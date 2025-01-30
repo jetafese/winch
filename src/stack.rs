@@ -6,7 +6,7 @@ use crate::wasmtime_environ::WasmValType;
 
 /// A typed register value used to track register values in the value
 /// stack.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct TypedReg {
     /// The physical register.
     pub reg: Reg,
@@ -78,7 +78,7 @@ pub struct Memory {
 }
 
 /// Value definition to be used within the shadow stack.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) enum Val {
     /// I32 Constant.
     I32(i32),

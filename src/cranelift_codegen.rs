@@ -81,9 +81,48 @@ pub mod ir {
     #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
     pub struct TrapCode();
 
+
+    const BIT_LITTLE_ENDIAN: u16 = 1 << 2;
+    const BIT_BIG_ENDIAN: u16 = 1 << 3;
+    const BIT_ALIGNED: u16 = 1 << 0;
+
     #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
     pub struct MemFlags {
         bits: u16,
+    }
+    impl MemFlags {
+        /// Create a new empty set of flags.
+        pub const fn new() -> Self {
+            Self { bits: 0 }.with_trap_code(Some(TrapCode::HEAP_OUT_OF_BOUNDS))
+        }
+    
+        /// Create a set of flags representing an access from a "trusted" address, meaning it's
+        /// known to be aligned and non-trapping.
+        pub const fn trusted() -> Self {
+            Self::new().with_notrap().with_aligned()
+        }
+
+        const fn with_bit(mut self, bit: u16) -> Self {
+            self.bits |= bit;
+            self
+        }
+
+        pub const fn with_endianness(self, endianness: Endianness) -> Self {
+            let res = match endianness {
+                Endianness::Little => self.with_bit(BIT_LITTLE_ENDIAN),
+                Endianness::Big => self.with_bit(BIT_BIG_ENDIAN),
+            };
+            assert!(!(res.read_bit(BIT_LITTLE_ENDIAN) && res.read_bit(BIT_BIG_ENDIAN)));
+            res
+        }
+
+        const fn read_bit(self, bit: u16) -> bool {
+            self.bits & bit != 0
+        }
+
+        pub const fn with_aligned(self) -> Self {
+            self.with_bit(BIT_ALIGNED)
+        }
     }
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
