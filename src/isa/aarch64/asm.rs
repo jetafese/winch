@@ -99,10 +99,11 @@ impl Assembler {
 impl Assembler {
     /// Return the emitted code.
     pub fn finalize(mut self, loc: Option<SourceLoc>) -> MachBufferFinalized<Final> {
-        let constants = Default::default();
+        // let constants = Default::default();
         let stencil = self
             .buffer
-            .finish(&constants, self.emit_state.ctrl_plane_mut());
+            .finish( crate::cranelift_codegen::MachInstEmitState::ctrl_plane_mut(&mut self.emit_state));
+            // .finish(&constants, crate::cranelift_codegen::MachInstEmitState::ctrl_plane_mut(&mut self.emit_state));
         stencil.apply_base_srcloc(loc.unwrap_or_default())
     }
 

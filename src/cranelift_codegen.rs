@@ -1,3 +1,5 @@
+use isa::aarch64::inst::{LabelUse, MInst};
+
 /// Out-of-line data for calls, to keep the size of `Inst` down.
 #[derive(Clone, Debug)]
 pub struct CallInfo<T> {
@@ -47,9 +49,33 @@ pub trait CompilePhase {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Stencil;
 
+impl MachBufferFinalized<Stencil> {
+    /// Get a finalized machine buffer by applying the function's base source location.
+    pub fn apply_base_srcloc(self, base_srcloc: ir::SourceLoc) -> MachBufferFinalized<Final> {
+        todo!()
+    }
+}
+
 /// Status of a compiled artifact ready to use.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Final;
+impl CompilePhase for Stencil {
+    type MachSrcLocType = MachSrcLoc<Stencil>;
+    type SourceLocType = ir::RelSourceLoc;
+}
+impl CompilePhase for Final {
+    type MachSrcLocType = MachSrcLoc<Final>;
+    type SourceLocType = ir::SourceLoc;
+}
+
+pub type CodeOffset = u32;
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct MachSrcLoc<T: CompilePhase> {
+    pub start: CodeOffset,
+    pub end: CodeOffset,
+    pub loc: T::SourceLocType,
+}
 
 pub trait VCodeInst: MachInst + MachInstEmit {}
 impl<I: MachInst + MachInstEmit> VCodeInst for I {}
@@ -73,10 +99,46 @@ pub trait MachInstEmit: MachInst {
     fn pretty_print_inst(&self, state: &mut Self::State) -> String;
 }
 
-pub trait MachInstEmitState<I: VCodeInst>: Default + Clone + std::fmt::Debug {}
+impl MachInst for MInst {
+    type LabelUse = crate::cranelift_codegen::isa::aarch64::inst::LabelUse;
+}
+
+impl MachInstEmit for MInst {
+    type State = crate::cranelift_codegen::isa::aarch64::inst::emit::EmitState;
+    type Info = crate::cranelift_codegen::isa::aarch64::inst::emit::EmitInfo;
+    
+    fn emit(&self, code: &mut MachBuffer<Self>, info: &Self::Info, state: &mut Self::State) {
+        todo!()
+    }
+    
+    fn pretty_print_inst(&self, state: &mut Self::State) -> String {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ControlPlane {}
+
+pub trait MachInstEmitState<I: VCodeInst>: Default + Clone + std::fmt::Debug {
+    fn ctrl_plane_mut(&mut self) -> &mut ControlPlane;
+}
 
 pub struct MachBuffer<I: VCodeInst> {
     kind: I::LabelUse,
+}
+impl<I: VCodeInst> MachBuffer<I> {
+    /// Create a new section, known to start at `start_offset` and with a size limited to
+    /// `length_limit`.
+    pub fn new() -> MachBuffer<I> {
+       todo!()
+    }
+    pub fn finish(
+        mut self,
+        // constants: &VCodeConstants,
+        ctrl_plane: &mut ControlPlane,
+    ) -> MachBufferFinalized<Stencil> {
+        todo!()
+    }
 }
 
 pub struct MachBufferFinalized<T: CompilePhase> {
@@ -124,9 +186,10 @@ pub mod ir {
         /// some are detected by a segmentation fault on the heap unmapped or
         /// offset-guard pages.
         pub const HEAP_OUT_OF_BOUNDS: TrapCode = TrapCode::reserved(2);
+        pub const INTEGER_DIVISION_BY_ZERO: TrapCode = TrapCode::reserved(3);
     }
 
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
     pub struct SourceLoc(u32);
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -311,9 +374,34 @@ pub mod isa {
         pub mod inst {
             pub mod emit {
                 pub struct EmitInfo(crate::cranelift_codegen::settings::Flags);
+                impl EmitInfo {
+                    /// Create a constant state for emission of instructions.
+                    pub fn new(flags: crate::cranelift_codegen::settings::Flags) -> Self {
+                        Self(flags)
+                    }
+                }
 
                 #[derive(Default, Clone, Debug)]
                 pub struct EmitState {}
+                impl crate::cranelift_codegen::MachInstEmitState<super::MInst> for EmitState {
+                    fn ctrl_plane_mut(&mut self) -> &mut crate::cranelift_codegen::ControlPlane {
+                        todo!()
+                    }
+                }
+            }
+
+            #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+            pub enum LabelUse {
+                Branch14,
+                Branch19,
+                Branch26,
+                #[allow(dead_code)]
+                Ldr19,
+                #[allow(dead_code)]
+                Adr21,
+                PCRel32,
+            }
+            impl crate::cranelift_codegen::MachInstLabelUse for LabelUse {
             }
 
             #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -335,10 +423,26 @@ pub mod isa {
                 /// The overflow condition flag.
                 v: bool,
             }
+            impl NZCV {
+                /// Create a new NZCV flags representation.
+                pub fn new(n: bool, z: bool, c: bool, v: bool) -> NZCV {
+                    NZCV { n, z, c, v }
+                }
+            }
 
             #[derive(Clone, Copy, Debug)]
             pub struct UImm5 {
                 value: u8,
+            }
+            impl UImm5 {
+                /// Create an unsigned 5-bit immediate from u8.
+                pub fn maybe_from_u8(value: u8) -> Option<UImm5> {
+                    if value < 32 {
+                        Some(UImm5 { value })
+                    } else {
+                        None
+                    }
+                }
             }
 
             #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -579,7 +683,11 @@ pub mod isa {
                 /// Was this constructed for a 32-bit or 64-bit instruction?
                 pub size: crate::masm::OperandSize,
             }
-
+            impl ImmLogic {
+                pub fn maybe_from_u64(value: u64, ty: crate::cranelift_codegen::ir::types::Type) -> Option<ImmLogic> {
+                    todo!()
+                }
+            }
             #[derive(Copy, Clone, Debug)]
             pub struct ImmShift {
                 /// 6-bit shift amount.
@@ -592,6 +700,24 @@ pub mod isa {
                 pub bits: u16,
                 /// Whether the immediate bits are shifted left by 12 or not.
                 pub shift12: bool,
+            }
+            impl Imm12 {
+                /// Compute a Imm12 from raw bits, if possible.
+                pub fn maybe_from_u64(val: u64) -> Option<Imm12> {
+                    if val & !0xfff == 0 {
+                        Some(Imm12 {
+                            bits: val as u16,
+                            shift12: false,
+                        })
+                    } else if val & !(0xfff << 12) == 0 {
+                        Some(Imm12 {
+                            bits: (val >> 12) as u16,
+                            shift12: true,
+                        })
+                    } else {
+                        None
+                    }
+                }
             }
 
             #[derive(Copy, Clone, Debug)]
@@ -635,6 +761,13 @@ pub mod isa {
             pub enum MInst {
                 Nop0,
                 Nop4,
+                CCmpImm {
+                    size: OperandSize,
+                    rn: crate::cranelift_codegen::Reg,
+                    imm: UImm5,
+                    nzcv: NZCV,
+                    cond: Cond,
+                },
             }
 
             #[derive(Clone, Debug)]
