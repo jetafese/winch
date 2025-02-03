@@ -71,14 +71,14 @@ impl Reg {
     }
 }
 
-impl From<Reg> for crate::cranelift_codegen::Reg {
-    fn from(reg: Reg) -> Self {
-        reg.inner().into()
-    }
-}
+// impl From<Reg> for crate::cranelift_codegen::Reg {
+//     fn from(reg: Reg) -> Self {
+//         reg.inner().into()
+//     }
+// }
 
 impl std::fmt::Debug for Reg {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", 0)
     }
 }
