@@ -9,7 +9,7 @@ rust-version = "1.64.0"
 edition = "2021"
 
 [dependencies]
-smallvec = { version = "1.6.1", features = ["union"] }
+# smallvec = { version = "1.6.1", features = ["union"] }
 anyhow = { version = "1.0.93", default-features = false }
 
 [features]

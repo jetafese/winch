@@ -7,7 +7,7 @@ use crate::cranelift_codegen::{
 };
 
 use super::regs;
-use crate::reg::Reg;
+use crate::isa::reg::Reg;
 
 /// Aarch64 indexing mode.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -19,7 +19,7 @@ pub(crate) enum Indexing {
 }
 
 /// Memory address representation.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) enum Address {
     /// Base register with an arbitrary offset.  Potentially gets
     /// lowered into multiple instructions during code emission
@@ -134,10 +134,11 @@ impl TryFrom<Address> for AMode {
                     Ok(AMode::SPPostIndexed { simm9 })
                 }
             }
-            Offset { base, offset } => Ok(AMode::RegOffset {
-                rn: base.into(),
-                off: offset,
-            }),
+            Offset { base: _, offset } => Ok(AMode::RegOffset { off: offset }),
+            // Offset { base, offset } => Ok(AMode::RegOffset {
+            //     rn: base.into(),
+            //     off: offset,
+            // }),
         }
     }
 }

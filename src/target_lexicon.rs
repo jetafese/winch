@@ -4,19 +4,19 @@ pub struct Triple {}
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Architecture {
     Unknown,
-    Arm(_),
+    Arm(),
     AmdGcn,
-    Aarch64(_),
+    Aarch64(),
     Asmjs,
     Avr,
     Bpfeb,
     Bpfel,
     Hexagon,
-    X86_32(_),
+    X86_32(),
     M68k,
     LoongArch64,
-    Mips32(_),
-    Mips64(_),
+    Mips32(),
+    Mips64(),
     Msp430,
     Nvptx64,
     Pulley32,
@@ -26,8 +26,8 @@ pub enum Architecture {
     Powerpc,
     Powerpc64,
     Powerpc64le,
-    Riscv32(_),
-    Riscv64(_),
+    Riscv32(),
+    Riscv64(),
     S390x,
     Sparc,
     Sparc64,
@@ -38,5 +38,5 @@ pub enum Architecture {
     /// x86_64 target that only supports Haswell-compatible Intel chips.
     X86_64h,
     XTensa,
-    Clever(_)
+    Clever()
 }

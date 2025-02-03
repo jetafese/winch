@@ -1,175 +1,193 @@
-use self::regs::{ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_GPR};
-use crate::isa::aarch64::regs::{ALL_FPR, NON_ALLOCATABLE_FPR};
-use crate::{
-    abi::{wasm_sig, ABI},
-    codegen::{CodeGen, CodeGenContext, FuncEnv, TypeConverter},
-    frame::{DefinedLocals, Frame},
-    isa::{Builder, TargetIsa},
-    masm::MacroAssembler,
-    regalloc::RegAlloc,
-    regset::RegBitSet,
-    stack::Stack,
-    BuiltinFunctions,
-};
-use anyhow::Result;
-// use cranelift_codegen::settings::{self, Flags};
-// use cranelift_codegen::{isa::aarch64::settings as aarch64_settings, Final, MachBufferFinalized};
-// use cranelift_codegen::{MachTextSectionBuilder, TextSectionBuilder};
-use masm::MacroAssembler as Aarch64Masm;
-// use target_lexicon::Triple;
-// use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
-// use wasmtime_cranelift::CompiledFunction;
-// use wasmtime_environ::{ModuleTranslation, ModuleTypesBuilder, Tunables, VMOffsets, WasmFuncType};
-
-mod abi;
 mod address;
 mod asm;
-mod masm;
 mod regs;
 
-/// Create an ISA from the given triple.
-pub(crate) fn isa_builder(triple: Triple) -> Builder {
-    Builder::new(
-        triple,
-        aarch64_settings::builder(),
-        |triple, shared_flags, settings| {
-            let isa_flags = aarch64_settings::Flags::new(&shared_flags, settings);
-            let isa = Aarch64::new(triple, shared_flags, isa_flags);
-            Ok(Box::new(isa))
-        },
-    )
+#[derive(Copy, Clone, Debug)]
+pub enum CallingConvention {
+    /// See [cranelift_codegen::isa::CallConv::SystemV]
+    SystemV,
+    /// See [cranelift_codegen::isa::CallConv::WindowsFastcall]
+    WindowsFastcall,
+    /// See [cranelift_codegen::isa::CallConv::AppleAarch64]
+    AppleAarch64,
+    /// The default calling convention for Winch. It largely follows SystemV
+    /// for parameter and result handling. This calling convention is part of
+    /// Winch's default ABI `crate::abi::ABI`.
+    Default,
 }
 
-/// Aarch64 ISA.
-pub(crate) struct Aarch64 {
-    /// The target triple.
-    triple: Triple,
-    /// ISA specific flags.
-    isa_flags: aarch64_settings::Flags,
-    /// Shared flags.
-    shared_flags: Flags,
-}
+// use self::regs::{ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_GPR};
+// use crate::isa::aarch64::regs::{ALL_FPR, NON_ALLOCATABLE_FPR};
+// use crate::{
+//     abi::{wasm_sig, ABI},
+//     codegen::{CodeGen, CodeGenContext, FuncEnv, TypeConverter},
+//     frame::{DefinedLocals, Frame},
+//     isa::{Builder, TargetIsa},
+//     masm::MacroAssembler,
+//     regalloc::RegAlloc,
+//     regset::RegBitSet,
+//     stack::Stack,
+//     BuiltinFunctions,
+// };
+// use anyhow::Result;
+// use crate::cranelift_codegen::settings::{self, Flags};
+// use crate::cranelift_codegen::{isa::aarch64::settings as aarch64_settings, Final, MachBufferFinalized};
+// use crate::cranelift_codegen::{MachTextSectionBuilder, TextSectionBuilder};
+// use masm::MacroAssembler as Aarch64Masm;
+// use crate::target_lexicon::Triple;
+// use crate::wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
+// use crate::wasmtime_cranelift::CompiledFunction;
+// use crate::wasmtime_environ::{ModuleTranslation, ModuleTypesBuilder, Tunables, VMOffsets, WasmFuncType};
 
-impl Aarch64 {
-    /// Create an Aarch64 ISA.
-    pub fn new(triple: Triple, shared_flags: Flags, isa_flags: aarch64_settings::Flags) -> Self {
-        Self {
-            isa_flags,
-            shared_flags,
-            triple,
-        }
-    }
-}
+// mod abi;
+// mod address;
+// mod asm;
+// mod masm;
+// mod regs;
 
-impl TargetIsa for Aarch64 {
-    fn name(&self) -> &'static str {
-        "aarch64"
-    }
+// /// Create an ISA from the given triple.
+// pub(crate) fn isa_builder(triple: Triple) -> Builder {
+//     Builder::new(
+//         triple,
+//         aarch64_settings::builder(),
+//         |triple, shared_flags, settings| {
+//             let isa_flags = aarch64_settings::Flags::new(&shared_flags, settings);
+//             let isa = Aarch64::new(triple, shared_flags, isa_flags);
+//             Ok(Box::new(isa))
+//         },
+//     )
+// }
 
-    fn triple(&self) -> &Triple {
-        &self.triple
-    }
+// /// Aarch64 ISA.
+// pub(crate) struct Aarch64 {
+//     /// The target triple.
+//     triple: Triple,
+//     /// ISA specific flags.
+//     isa_flags: aarch64_settings::Flags,
+//     /// Shared flags.
+//     shared_flags: Flags,
+// }
 
-    fn flags(&self) -> &settings::Flags {
-        &self.shared_flags
-    }
+// impl Aarch64 {
+//     /// Create an Aarch64 ISA.
+//     pub fn new(triple: Triple, shared_flags: Flags, isa_flags: aarch64_settings::Flags) -> Self {
+//         Self {
+//             isa_flags,
+//             shared_flags,
+//             triple,
+//         }
+//     }
+// }
 
-    fn isa_flags(&self) -> Vec<settings::Value> {
-        self.isa_flags.iter().collect()
-    }
+// impl TargetIsa for Aarch64 {
+//     fn name(&self) -> &'static str {
+//         "aarch64"
+//     }
 
-    fn is_branch_protection_enabled(&self) -> bool {
-        self.isa_flags.use_bti()
-    }
+//     fn triple(&self) -> &Triple {
+//         &self.triple
+//     }
 
-    fn compile_function(
-        &self,
-        sig: &WasmFuncType,
-        body: &FunctionBody,
-        translation: &ModuleTranslation,
-        types: &ModuleTypesBuilder,
-        builtins: &mut BuiltinFunctions,
-        validator: &mut FuncValidator<ValidatorResources>,
-        tunables: &Tunables,
-    ) -> Result<CompiledFunction> {
-        let pointer_bytes = self.pointer_bytes();
-        let vmoffsets = VMOffsets::new(pointer_bytes, &translation.module);
-        let mut body = body.get_binary_reader();
-        let mut masm = Aarch64Masm::new(pointer_bytes, self.shared_flags.clone())?;
-        let stack = Stack::new();
-        let abi_sig = wasm_sig::<abi::Aarch64ABI>(sig);
+//     fn flags(&self) -> &settings::Flags {
+//         &self.shared_flags
+//     }
 
-        let env = FuncEnv::new(
-            &vmoffsets,
-            translation,
-            types,
-            builtins,
-            self,
-            abi::Aarch64ABI::ptr_type(),
-        );
-        let type_converter = TypeConverter::new(env.translation, env.types);
-        let defined_locals =
-            DefinedLocals::new::<abi::Aarch64ABI>(&type_converter, &mut body, validator)?;
-        let frame = Frame::new::<abi::Aarch64ABI>(&abi_sig, &defined_locals)?;
-        let gpr = RegBitSet::int(
-            ALL_GPR.into(),
-            NON_ALLOCATABLE_GPR.into(),
-            usize::try_from(MAX_GPR).unwrap(),
-        );
-        let fpr = RegBitSet::float(
-            ALL_FPR.into(),
-            NON_ALLOCATABLE_FPR.into(),
-            usize::try_from(MAX_FPR).unwrap(),
-        );
-        let regalloc = RegAlloc::from(gpr, fpr);
-        let codegen_context = CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
-        let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
+//     fn isa_flags(&self) -> Vec<settings::Value> {
+//         self.isa_flags.iter().collect()
+//     }
 
-        let mut body_codegen = codegen.emit_prologue()?;
-        body_codegen.emit(&mut body, validator)?;
-        let names = body_codegen.env.take_name_map();
-        let base = body_codegen.source_location.base;
-        Ok(CompiledFunction::new(
-            masm.finalize(base)?,
-            names,
-            self.function_alignment(),
-        ))
-    }
+//     fn is_branch_protection_enabled(&self) -> bool {
+//         self.isa_flags.use_bti()
+//     }
 
-    fn text_section_builder(&self, num_funcs: usize) -> Box<dyn TextSectionBuilder> {
-        Box::new(MachTextSectionBuilder::<
-            cranelift_codegen::isa::aarch64::inst::Inst,
-        >::new(num_funcs))
-    }
+//     fn compile_function(
+//         &self,
+//         sig: &WasmFuncType,
+//         body: &FunctionBody,
+//         translation: &ModuleTranslation,
+//         types: &ModuleTypesBuilder,
+//         builtins: &mut BuiltinFunctions,
+//         validator: &mut FuncValidator<ValidatorResources>,
+//         tunables: &Tunables,
+//     ) -> Result<CompiledFunction> {
+//         let pointer_bytes = self.pointer_bytes();
+//         let vmoffsets = VMOffsets::new(pointer_bytes, &translation.module);
+//         let mut body = body.get_binary_reader();
+//         let mut masm = Aarch64Masm::new(pointer_bytes, self.shared_flags.clone())?;
+//         let stack = Stack::new();
+//         let abi_sig = wasm_sig::<abi::Aarch64ABI>(sig);
 
-    fn function_alignment(&self) -> u32 {
-        // See `cranelift_codegen::isa::TargetIsa::function_alignment`.
-        32
-    }
+//         let env = FuncEnv::new(
+//             &vmoffsets,
+//             translation,
+//             types,
+//             builtins,
+//             self,
+//             abi::Aarch64ABI::ptr_type(),
+//         );
+//         let type_converter = TypeConverter::new(env.translation, env.types);
+//         let defined_locals =
+//             DefinedLocals::new::<abi::Aarch64ABI>(&type_converter, &mut body, validator)?;
+//         let frame = Frame::new::<abi::Aarch64ABI>(&abi_sig, &defined_locals)?;
+//         let gpr = RegBitSet::int(
+//             ALL_GPR.into(),
+//             NON_ALLOCATABLE_GPR.into(),
+//             usize::try_from(MAX_GPR).unwrap(),
+//         );
+//         let fpr = RegBitSet::float(
+//             ALL_FPR.into(),
+//             NON_ALLOCATABLE_FPR.into(),
+//             usize::try_from(MAX_FPR).unwrap(),
+//         );
+//         let regalloc = RegAlloc::from(gpr, fpr);
+//         let codegen_context = CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
+//         let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
 
-    fn emit_unwind_info(
-        &self,
-        _result: &MachBufferFinalized<Final>,
-        _kind: cranelift_codegen::isa::unwind::UnwindInfoKind,
-    ) -> Result<Option<cranelift_codegen::isa::unwind::UnwindInfo>> {
-        // TODO: should fill this in with an actual implementation
-        Ok(None)
-    }
+//         let mut body_codegen = codegen.emit_prologue()?;
+//         body_codegen.emit(&mut body, validator)?;
+//         let names = body_codegen.env.take_name_map();
+//         let base = body_codegen.source_location.base;
+//         Ok(CompiledFunction::new(
+//             masm.finalize(base)?,
+//             names,
+//             self.function_alignment(),
+//         ))
+//     }
 
-    fn page_size_align_log2(&self) -> u8 {
-        // use target_lexicon::*;
-        match self.triple().operating_system {
-            OperatingSystem::MacOSX { .. }
-            | OperatingSystem::Darwin(_)
-            | OperatingSystem::IOS(_)
-            | OperatingSystem::TvOS(_) => {
-                debug_assert_eq!(1 << 14, 0x4000);
-                14
-            }
-            _ => {
-                debug_assert_eq!(1 << 16, 0x10000);
-                16
-            }
-        }
-    }
-}
+//     fn text_section_builder(&self, num_funcs: usize) -> Box<dyn TextSectionBuilder> {
+//         Box::new(MachTextSectionBuilder::<
+//             crate::cranelift_codegen::isa::aarch64::inst::Inst,
+//         >::new(num_funcs))
+//     }
+
+//     fn function_alignment(&self) -> u32 {
+//         // See `cranelift_codegen::isa::TargetIsa::function_alignment`.
+//         32
+//     }
+
+//     fn emit_unwind_info(
+//         &self,
+//         _result: &MachBufferFinalized<Final>,
+//         _kind: crate::cranelift_codegen::isa::unwind::UnwindInfoKind,
+//     ) -> Result<Option<crate::cranelift_codegen::isa::unwind::UnwindInfo>> {
+//         // TODO: should fill this in with an actual implementation
+//         Ok(None)
+//     }
+
+//     fn page_size_align_log2(&self) -> u8 {
+//         // use target_lexicon::*;
+//         match self.triple().operating_system {
+//             OperatingSystem::MacOSX { .. }
+//             | OperatingSystem::Darwin(_)
+//             | OperatingSystem::IOS(_)
+//             | OperatingSystem::TvOS(_) => {
+//                 debug_assert_eq!(1 << 14, 0x4000);
+//                 14
+//             }
+//             _ => {
+//                 debug_assert_eq!(1 << 16, 0x10000);
+//                 16
+//             }
+//         }
+//     }
+// }

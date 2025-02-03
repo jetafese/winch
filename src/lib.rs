@@ -8,21 +8,21 @@
 // enabled.
 #![cfg_attr(not(feature = "all-arch"), allow(dead_code))]
 
-mod abi;
-pub use codegen::{BuiltinFunctions, FuncEnv};
-mod codegen;
-mod frame;
+// mod abi;
+// pub use codegen::{BuiltinFunctions, FuncEnv};
+// mod codegen;
+// mod frame;
 pub mod isa;
-pub use isa::*;
+// pub use isa::*;
 mod masm;
 mod regalloc;
-mod regset;
-mod stack;
-mod visitor;
+// mod regset;
+// mod stack;
+// mod visitor;
 /* stubbed libraries */
 mod cranelift_codegen;
-mod wasmtime_environ;
+// mod wasmtime_environ;
 mod regalloc2;
-mod wasmparser;
-mod wasmtime_cranelift;
-mod target_lexicon;
+// mod wasmparser;
+// mod wasmtime_cranelift;
+// mod target_lexicon;
