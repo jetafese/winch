@@ -1,7 +1,7 @@
 //! X64 register definition.
 
 use crate::isa::reg::Reg;
-use regalloc2::{PReg, RegClass};
+use crate::regalloc2::{PReg, RegClass};
 
 const ENC_RAX: u8 = 0;
 const ENC_RCX: u8 = 1;

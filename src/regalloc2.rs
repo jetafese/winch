@@ -64,3 +64,20 @@ pub enum RegClass {
     Float = 1,
     Vector = 2,
 }
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct VReg {
+    bits: u32,
+}
+impl VReg {
+    pub const MAX_BITS: usize = 21;
+    pub const MAX: usize = (1 << Self::MAX_BITS) - 1;
+
+    #[inline(always)]
+    pub const fn new(virt_reg: usize, class: RegClass) -> Self {
+        debug_assert!(virt_reg <= VReg::MAX);
+        VReg {
+            bits: ((virt_reg as u32) << 2) | (class as u8 as u32),
+        }
+    }
+}

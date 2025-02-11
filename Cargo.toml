@@ -11,6 +11,7 @@ edition = "2021"
 [dependencies]
 # smallvec = { version = "1.6.1", features = ["union"] }
 anyhow = { version = "1.0.93", default-features = false }
+seahorn-stubs = {path = "src/seahorn-stubs"}
 
 [features]
 x64 = []

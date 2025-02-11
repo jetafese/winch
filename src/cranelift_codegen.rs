@@ -1,4 +1,6 @@
-use isa::aarch64::inst::{LabelUse, MInst};
+// use isa::aarch64::inst::{LabelUse, MInst};
+use isa::aarch64::inst::MInst;
+use core::marker::PhantomData;
 
 /// Out-of-line data for calls, to keep the size of `Inst` down.
 #[derive(Clone, Debug)]
@@ -51,7 +53,7 @@ pub struct Stencil;
 
 impl MachBufferFinalized<Stencil> {
     /// Get a finalized machine buffer by applying the function's base source location.
-    pub fn apply_base_srcloc(self, base_srcloc: ir::SourceLoc) -> MachBufferFinalized<Final> {
+    pub fn apply_base_srcloc(self, _base_srcloc: ir::SourceLoc) -> MachBufferFinalized<Final> {
         todo!()
     }
 }
@@ -107,11 +109,27 @@ impl MachInstEmit for MInst {
     type State = crate::cranelift_codegen::isa::aarch64::inst::emit::EmitState;
     type Info = crate::cranelift_codegen::isa::aarch64::inst::emit::EmitInfo;
     
-    fn emit(&self, code: &mut MachBuffer<Self>, info: &Self::Info, state: &mut Self::State) {
+    fn emit(&self, _code: &mut MachBuffer<Self>, _info: &Self::Info, _state: &mut Self::State) {
         todo!()
     }
     
-    fn pretty_print_inst(&self, state: &mut Self::State) -> String {
+    fn pretty_print_inst(&self, _state: &mut Self::State) -> String {
+        todo!()
+    }
+}
+
+impl MachInst for isa::x64::Inst {
+    type LabelUse = crate::cranelift_codegen::isa::aarch64::inst::LabelUse;
+}
+
+impl MachInstEmit for isa::x64::Inst {
+    type State = crate::cranelift_codegen::isa::x64::EmitState;
+    type Info = crate::cranelift_codegen::isa::x64::EmitInfo;
+    
+    fn emit(&self, _code: &mut MachBuffer<Self>, _info: &Self::Info, _state: &mut Self::State) {
+    }
+    
+    fn pretty_print_inst(&self, _state: &mut Self::State) -> String {
         todo!()
     }
 }
@@ -124,18 +142,19 @@ pub trait MachInstEmitState<I: VCodeInst>: Default + Clone + std::fmt::Debug {
 }
 
 pub struct MachBuffer<I: VCodeInst> {
-    kind: I::LabelUse,
+    kind: PhantomData<I>,
 }
 impl<I: VCodeInst> MachBuffer<I> {
     /// Create a new section, known to start at `start_offset` and with a size limited to
     /// `length_limit`.
     pub fn new() -> MachBuffer<I> {
-       todo!()
+        MachBuffer { kind: PhantomData }
+    //    todo!()
     }
     pub fn finish(
-        mut self,
+        self,
         // constants: &VCodeConstants,
-        ctrl_plane: &mut ControlPlane,
+        _ctrl_plane: &mut ControlPlane,
     ) -> MachBufferFinalized<Stencil> {
         todo!()
     }
@@ -150,6 +169,12 @@ pub mod ir {
         #[derive(Copy, Debug, Clone, PartialEq, Eq, Hash)]
         pub struct Type(u16);
         pub const I64: Type = Type(0x77);
+    }
+
+    #[derive(Clone, PartialEq, Hash)]
+    pub struct ConstantPool {}
+    impl ConstantPool {
+        pub fn new() -> Self { Self {}}
     }
 
     #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
@@ -341,6 +366,9 @@ pub mod settings {
     pub struct Flags {
         bytes: [u8; 11],
     }
+    impl Flags {
+        pub fn new() -> Self { Self {bytes: [1,1,1,1,0,0,1,1,0,1,1]}}   
+    }
 
     /// Represents an available builder setting.
     ///
@@ -370,6 +398,99 @@ pub mod isa {
         Probestack,
         Winch,
     }
+    // x64
+    pub mod x64 {
+        use crate::{cranelift_codegen::{settings, Reg}, isa::reg::WritableReg};
+
+        pub mod args {
+            use crate::cranelift_codegen::RegClass;
+
+            #[derive(Copy, Clone, Debug, PartialEq)]
+            pub enum AluRmiROpcode {
+                /// Add operation.
+                Add,
+                /// Add with carry.
+                Adc,
+                /// Integer subtraction.
+                Sub,
+                /// Integer subtraction with borrow.
+                Sbb,
+                /// Bitwise AND operation.
+                And,
+                /// Bitwise inclusive OR.
+                Or,
+                /// Bitwise exclusive OR.
+                Xor,
+            }
+            #[derive(Clone, Debug)]
+            pub enum RegMemImm {
+                /// A register operand.
+                Reg {
+                    /// The underlying register.
+                    reg: crate::cranelift_codegen::Reg,
+                },
+                /// A memory operand.
+                Mem {
+                    // /// The memory address.
+                    // addr: SyntheticAmode,
+                },
+                /// An immediate operand.
+                Imm {
+                    /// The immediate value.
+                    simm32: u32,
+                },
+            }
+            impl RegMemImm {
+                pub fn reg(reg: crate::cranelift_codegen::Reg) -> Self {
+                    debug_assert!(reg.class() == RegClass::Int || reg.class() == RegClass::Float);
+                    Self::Reg { reg }
+                }
+            }
+        }
+        #[derive(Clone, Debug)]
+        pub enum Inst {
+            Nop0,
+            Nop4,
+            AluRmiR {
+                size: crate::masm::OperandSize,
+                op: args::AluRmiROpcode,
+                src1: crate::cranelift_codegen::Reg,
+                src2: Reg,
+                dst: WritableReg,
+            },
+        }
+        pub mod x64_settings {
+            #[derive(Clone, Hash)]
+            /// Flags group `shared`.
+            pub struct Flags {
+                bytes: [u8; 11],
+            }
+            impl Flags {
+                pub fn new() -> Self { Self {bytes: [1,1,1,1,0,0,1,1,0,1,1]}}   
+            }
+        }
+        pub struct EmitInfo {
+            pub(super) flags: settings::Flags,
+            isa_flags: x64_settings::Flags,
+        }
+        
+        impl EmitInfo {
+            /// Create a constant state for emission of instructions.
+            pub fn new(flags: settings::Flags, isa_flags: x64_settings::Flags) -> Self {
+                Self { flags, isa_flags }
+            }
+        }
+
+        #[derive(Default, Clone, Debug)]
+        pub struct EmitState {}
+        impl crate::cranelift_codegen::MachInstEmitState<Inst> for EmitState {
+            fn ctrl_plane_mut(&mut self) -> &mut crate::cranelift_codegen::ControlPlane {
+                todo!()
+            }
+        }
+    }
+
+    // aarch64
     pub mod aarch64 {
         pub mod inst {
             pub mod emit {
@@ -684,7 +805,7 @@ pub mod isa {
                 pub size: crate::masm::OperandSize,
             }
             impl ImmLogic {
-                pub fn maybe_from_u64(value: u64, ty: crate::cranelift_codegen::ir::types::Type) -> Option<ImmLogic> {
+                pub fn maybe_from_u64(_value: u64, _ty: crate::cranelift_codegen::ir::types::Type) -> Option<ImmLogic> {
                     todo!()
                 }
             }
@@ -930,13 +1051,24 @@ impl VReg {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct RealReg(crate::regalloc2::PReg);
+pub struct RealReg(pub crate::regalloc2::PReg);
+impl RealReg {
+    /// Get the class of this register.
+    pub fn class(self) -> RegClass {
+        self.0.class()
+    }
+
+    /// The physical register number.
+    pub fn hw_enc(self) -> u8 {
+        self.0.hw_enc() as u8
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VirtualReg(VReg);
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Reg(VReg);
+pub struct Reg(pub VReg);
 impl Reg {
     /// Get the physical register (`RealReg`), if this register is
     /// one.
