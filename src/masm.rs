@@ -1,5 +1,5 @@
 #[derive(Copy, Debug, Clone, Eq, PartialEq)]
-pub(crate) enum OperandSize {
+pub enum OperandSize {
     /// 8 bits.
     S8,
     /// 16 bits.
@@ -10,6 +10,12 @@ pub(crate) enum OperandSize {
     S64,
     /// 128 bits.
     S128,
+}
+
+#[derive(Eq, PartialEq)]
+pub(crate) enum MulWideKind {
+    Signed,
+    Unsigned,
 }
 
 #[derive(Eq, PartialEq)]

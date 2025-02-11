@@ -1,4 +1,5 @@
-pub(crate) mod aarch64;
+// pub(crate) mod aarch64;
+pub mod x64;
 pub(crate) mod reg;
 
 // use crate::BuiltinFunctions;
@@ -89,19 +90,19 @@ pub(crate) mod reg;
 // /// it generates is tightly coupled to how Wasmtime expects multiple returns
 // /// to be handled: the first return in a register, dictated by the calling
 // /// convention and the rest, if any, via a return pointer.
-// #[derive(Copy, Clone, Debug)]
-// pub enum CallingConvention {
-//     /// See [cranelift_codegen::isa::CallConv::SystemV]
-//     SystemV,
-//     /// See [cranelift_codegen::isa::CallConv::WindowsFastcall]
-//     WindowsFastcall,
-//     /// See [cranelift_codegen::isa::CallConv::AppleAarch64]
-//     AppleAarch64,
-//     /// The default calling convention for Winch. It largely follows SystemV
-//     /// for parameter and result handling. This calling convention is part of
-//     /// Winch's default ABI `crate::abi::ABI`.
-//     Default,
-// }
+#[derive(Copy, Clone, Debug)]
+pub enum CallingConvention {
+    /// See [cranelift_codegen::isa::CallConv::SystemV]
+    SystemV,
+    /// See [cranelift_codegen::isa::CallConv::WindowsFastcall]
+    WindowsFastcall,
+    /// See [cranelift_codegen::isa::CallConv::AppleAarch64]
+    AppleAarch64,
+    /// The default calling convention for Winch. It largely follows SystemV
+    /// for parameter and result handling. This calling convention is part of
+    /// Winch's default ABI `crate::abi::ABI`.
+    Default,
+}
 
 // impl CallingConvention {
 //     /// Returns true if the current calling convention is `WindowsFastcall`.
