@@ -1,3 +1,5 @@
+#[allow(unused)]
+
 // use isa::aarch64::inst::{LabelUse, MInst};
 use isa::aarch64::inst::MInst;
 use core::marker::PhantomData;
@@ -82,11 +84,11 @@ pub struct MachSrcLoc<T: CompilePhase> {
 pub trait VCodeInst: MachInst + MachInstEmit {}
 impl<I: MachInst + MachInstEmit> VCodeInst for I {}
 
-pub trait MachInst: Clone + std::fmt::Debug {
+pub trait MachInst: Clone + core::fmt::Debug {
     type LabelUse: MachInstLabelUse;
 }
 
-pub trait MachInstLabelUse: Clone + Copy + std::fmt::Debug + Eq {}
+pub trait MachInstLabelUse: Clone + Copy + core::fmt::Debug + Eq {}
 pub trait MachInstEmit: MachInst {
     /// Persistent state carried across `emit` invocations.
     type State: MachInstEmitState<Self>;
@@ -98,7 +100,7 @@ pub trait MachInstEmit: MachInst {
     fn emit(&self, code: &mut MachBuffer<Self>, info: &Self::Info, state: &mut Self::State);
 
     /// Pretty-print the instruction.
-    fn pretty_print_inst(&self, state: &mut Self::State) -> String;
+    fn pretty_print_inst(&self, state: &mut Self::State);
 }
 
 impl MachInst for MInst {
@@ -113,7 +115,7 @@ impl MachInstEmit for MInst {
         todo!()
     }
     
-    fn pretty_print_inst(&self, _state: &mut Self::State) -> String {
+    fn pretty_print_inst(&self, _state: &mut Self::State) {
         todo!()
     }
 }
@@ -129,7 +131,7 @@ impl MachInstEmit for isa::x64::Inst {
     fn emit(&self, _code: &mut MachBuffer<Self>, _info: &Self::Info, _state: &mut Self::State) {
     }
     
-    fn pretty_print_inst(&self, _state: &mut Self::State) -> String {
+    fn pretty_print_inst(&self, _state: &mut Self::State) {
         todo!()
     }
 }
@@ -137,7 +139,7 @@ impl MachInstEmit for isa::x64::Inst {
 #[derive(Debug, Clone, Default)]
 pub struct ControlPlane {}
 
-pub trait MachInstEmitState<I: VCodeInst>: Default + Clone + std::fmt::Debug {
+pub trait MachInstEmitState<I: VCodeInst>: Default + Clone + core::fmt::Debug {
     fn ctrl_plane_mut(&mut self) -> &mut ControlPlane;
 }
 
@@ -148,8 +150,8 @@ impl<I: VCodeInst> MachBuffer<I> {
     /// Create a new section, known to start at `start_offset` and with a size limited to
     /// `length_limit`.
     pub fn new() -> MachBuffer<I> {
-        MachBuffer { kind: PhantomData }
-    //    todo!()
+        // MachBuffer { kind: PhantomData }
+       todo!()
     }
     pub fn finish(
         self,
@@ -495,6 +497,7 @@ pub mod isa {
         pub mod inst {
             pub mod emit {
                 pub struct EmitInfo(crate::cranelift_codegen::settings::Flags);
+                #[allow(unused)]
                 impl EmitInfo {
                     /// Create a constant state for emission of instructions.
                     pub fn new(flags: crate::cranelift_codegen::settings::Flags) -> Self {
@@ -555,6 +558,7 @@ pub mod isa {
             pub struct UImm5 {
                 value: u8,
             }
+            #[allow(unused)]
             impl UImm5 {
                 /// Create an unsigned 5-bit immediate from u8.
                 pub fn maybe_from_u8(value: u8) -> Option<UImm5> {
@@ -912,6 +916,7 @@ pub mod isa {
                 /// multiplied by the size of this type
                 pub scale_ty: crate::cranelift_codegen::ir::types::Type,
             }
+            #[allow(unused)]
             impl SImm7Scaled {
                 /// Create a SImm7Scaled from a raw offset and the known scale type, if
                 /// possible.
@@ -950,6 +955,7 @@ pub mod isa {
                 /// The value.
                 pub value: i16,
             }
+            #[allow(unused)]
             impl SImm9 {
                 /// Create a signed 9-bit offset from a full-range value, if possible.
                 pub fn maybe_from_i64(value: i64) -> Option<SImm9> {
@@ -1098,8 +1104,8 @@ impl Reg {
     }
 }
 
-impl std::fmt::Debug for Reg {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Debug for Reg {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         if self.0 == VReg::invalid() {
             write!(f, "<invalid>")
             // } else if let Some(rreg) = self.to_real_reg() {

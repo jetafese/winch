@@ -17,3 +17,9 @@ seahorn-stubs = {path = "src/seahorn-stubs"}
 x64 = []
 arm64 = []
 all-arch = ["x64", "arm64"]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

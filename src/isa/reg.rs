@@ -77,19 +77,19 @@ impl From<Reg> for crate::cranelift_codegen::Reg {
     }
 }
 
-impl std::convert::From<crate::regalloc2::PReg> for crate::cranelift_codegen::Reg {
+impl core::convert::From<crate::regalloc2::PReg> for crate::cranelift_codegen::Reg {
     fn from(preg: crate::regalloc2::PReg) -> crate::cranelift_codegen::Reg {
         crate::cranelift_codegen::RealReg(preg).into()
     }
 }
 
-impl std::convert::From<crate::cranelift_codegen::RealReg> for crate::cranelift_codegen::Reg {
+impl core::convert::From<crate::cranelift_codegen::RealReg> for crate::cranelift_codegen::Reg {
     fn from(reg: crate::cranelift_codegen::RealReg) -> crate::cranelift_codegen::Reg {
         crate::cranelift_codegen::Reg(reg.into())
     }
 }
 
-impl std::convert::From<crate::cranelift_codegen::RealReg> for crate::cranelift_codegen::VReg {
+impl core::convert::From<crate::cranelift_codegen::RealReg> for crate::cranelift_codegen::VReg {
     fn from(reg: crate::cranelift_codegen::RealReg) -> crate::cranelift_codegen::VReg {
         // This representation is redundant: the class is implied in the vreg
         // index as well as being in the vreg class field.
@@ -97,14 +97,14 @@ impl std::convert::From<crate::cranelift_codegen::RealReg> for crate::cranelift_
     }
 }
 
-impl std::convert::From<crate::cranelift_codegen::RealReg> for crate::regalloc2::PReg {
+impl core::convert::From<crate::cranelift_codegen::RealReg> for crate::regalloc2::PReg {
     fn from(reg: crate::cranelift_codegen::RealReg) -> crate::regalloc2::PReg {
         reg.0
     }
 }
 
-impl std::fmt::Debug for Reg {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Debug for Reg {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(f, "{}", 0)
     }
 }
