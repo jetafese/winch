@@ -1,11 +1,6 @@
-// #![no_std]
-
 #![no_builtins]
 #![no_std]
 #![no_main]
-// #![feature(default_alloc_error_handler)]
-
-use cranelift_codegen::{Reg, VReg, Writable};
 
 pub mod isa;
 // pub use isa::*;
@@ -19,7 +14,10 @@ mod cranelift_codegen;
 // mod wasmtime_environ;
 mod regalloc2;
 
-use seahorn_stubs::{error, nondet_u32};
+use cranelift_codegen::Writable;
+use isa::reg::Reg;
+use regalloc2::PReg;
+use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32};
 
 // extern "C" {
 //     fn __VERIFIER_error() -> !;
@@ -53,7 +51,7 @@ pub extern fn main() {
     let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
     let shared_flags = cranelift_codegen::settings::Flags::new();
     let mut asm = isa::x64::asm::Assembler::new(shared_flags, isa_flags);
-    let src = Reg(VReg::new(32, regalloc2::RegClass::Int));
+    let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
     let dst = isa::x64::regs::scratch();
     asm.add_rr(src, Writable::from_reg(dst),masm::OperandSize::S32);
     // error();
