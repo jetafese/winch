@@ -92,11 +92,11 @@ impl From<Reg> for Gpr {
 //     }
 // }
 
-// impl From<Reg> for GprMemImm {
-//     fn from(reg: Reg) -> Self {
-//         GprMemImm::unwrap_new(reg.into())
-//     }
-// }
+impl From<Reg> for GprMemImm {
+    fn from(reg: Reg) -> Self {
+        GprMemImm::unwrap_new(reg.into())
+    }
+}
 
 // impl From<Reg> for Imm8Gpr {
 //     fn from(value: Reg) -> Self {
@@ -549,18 +549,18 @@ impl Assembler {
     //     });
     // }
 
-    // /// Subtact immediate register.
-    // pub fn sub_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
-    //     let imm = RegMemImm::imm(imm as u32);
+    /// Subtact immediate register.
+    pub fn sub_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
+        let imm = RegMemImm::imm(imm as u32);
 
-    //     self.emit(Inst::AluRmiR {
-    //         size: size.into(),
-    //         op: AluRmiROpcode::Sub,
-    //         src1: dst.to_reg().into(),
-    //         src2: GprMemImm::unwrap_new(imm),
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+        self.emit(Inst::AluRmiR {
+            size: size.into(),
+            op: AluRmiROpcode::Sub,
+            src1: dst.to_reg().into(),
+            src2: GprMemImm::unwrap_new(imm),
+            dst: dst.map(Into::into),
+        });
+    }
 
     // /// "and" two registers.
     // pub fn and_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
