@@ -150,8 +150,7 @@ impl<I: VCodeInst> MachBuffer<I> {
     /// Create a new section, known to start at `start_offset` and with a size limited to
     /// `length_limit`.
     pub fn new() -> MachBuffer<I> {
-        // MachBuffer { kind: PhantomData }
-       todo!()
+        MachBuffer { kind: PhantomData }
     }
     pub fn finish(
         self,
@@ -402,11 +401,62 @@ pub mod isa {
     }
     // x64
     pub mod x64 {
-        use crate::{cranelift_codegen::{settings, Reg}, isa::reg::WritableReg};
+        // use crate::{cranelift_codegen::{settings, Reg}, isa::reg::WritableReg};
+
+        use crate::cranelift_codegen::settings;
 
         pub mod args {
-            use crate::cranelift_codegen::RegClass;
+            use crate::cranelift_codegen::{ir::MemFlags, Reg, RegClass, Writable, MachLabel};
 
+            #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+            pub struct VCodeConstant(u32);
+
+
+            #[derive(Clone, Debug)]
+            pub enum Amode {
+                ImmReg {
+                    simm32: i32,
+                    base: Reg,
+                    flags: MemFlags,
+                },
+                ImmRegRegShift {
+                    simm32: i32,
+                    base: Gpr,
+                    index: Gpr,
+                    shift: u8,
+                    flags: MemFlags,
+                },
+                RipRelative {
+                    target: MachLabel,
+                },
+            }
+
+            #[derive(Clone, Debug)]
+            pub enum SyntheticAmode {
+                /// A real amode.
+                Real(Amode),
+            
+                /// A (virtual) offset into the incoming argument area.
+                IncomingArg {
+                    /// The downward offset from the start of the incoming argument area.
+                    offset: u32,
+                },
+            
+                /// A (virtual) offset to the slot area of the function frame, which lies just above the
+                /// outgoing arguments.
+                SlotOffset {
+                    /// The offset into the slot area.
+                    simm32: i32,
+                },
+            
+                /// A virtual offset to a constant that will be emitted in the constant section of the buffer.
+                ConstantOffset(VCodeConstant),
+            }
+            impl SyntheticAmode {
+                pub fn aligned(&self) -> bool {
+                    todo!()
+                }
+            }
             #[derive(Copy, Clone, Debug, PartialEq)]
             pub enum AluRmiROpcode {
                 /// Add operation.
@@ -424,6 +474,42 @@ pub mod isa {
                 /// Bitwise exclusive OR.
                 Xor,
             }
+
+            #[derive(Clone, Debug)]
+            pub enum RegMem {
+                /// A register operand.
+                Reg {
+                    /// The underlying register.
+                    reg: Reg,
+                },
+                /// A memory operand.
+                Mem {
+                    /// The memory address.
+                    addr: SyntheticAmode,
+                },
+            }
+            impl RegMem {
+                /// Create a register operand.
+                pub fn reg(reg: Reg) -> Self {
+                    debug_assert!(reg.class() == RegClass::Int || reg.class() == RegClass::Float);
+                    Self::Reg { reg }
+                }
+            }
+
+            #[derive(Clone, Debug)]
+            pub enum Imm8Reg {
+                /// 8-bit immediate operand.
+                Imm8 {
+                    /// The 8-bit immediate value.
+                    imm: u8,
+                },
+                /// A register operand.
+                Reg {
+                    /// The underlying register.
+                    reg: Reg,
+                },
+            }
+
             #[derive(Clone, Debug)]
             pub enum RegMemImm {
                 /// A register operand.
@@ -434,7 +520,7 @@ pub mod isa {
                 /// A memory operand.
                 Mem {
                     // /// The memory address.
-                    // addr: SyntheticAmode,
+                    addr: SyntheticAmode,
                 },
                 /// An immediate operand.
                 Imm {
@@ -447,7 +533,360 @@ pub mod isa {
                     debug_assert!(reg.class() == RegClass::Int || reg.class() == RegClass::Float);
                     Self::Reg { reg }
                 }
+                pub fn imm(simm32: u32) -> Self {
+                    Self::Imm { simm32 }
+                }
             }
+
+            pub trait ToWritableReg {
+                /// Convert `Writable{Xmm,Gpr}` to `Writable<Reg>`.
+                fn to_writable_reg(&self) -> Writable<Reg>;
+            }
+            
+            /// An extension trait for converting `Writable<Reg>` to `Writable{Xmm,Gpr}`.
+            pub trait FromWritableReg: Sized {
+                /// Convert `Writable<Reg>` to `Writable{Xmm,Gpr}`.
+                fn from_writable_reg(w: Writable<Reg>) -> Option<Self>;
+            }
+
+            /// A macro for defining a newtype of `Reg` that enforces some invariant about
+            /// the wrapped `Reg` (such as that it is of a particular register class).
+            macro_rules! newtype_of_reg {
+                (
+                    $newtype_reg:ident,
+                    $newtype_writable_reg:ident,
+                    $newtype_option_writable_reg:ident,
+                    reg_mem: ($($newtype_reg_mem:ident $(aligned:$aligned:ident)?),*),
+                    reg_mem_imm: ($($newtype_reg_mem_imm:ident $(aligned:$aligned_imm:ident)?),*),
+                    $newtype_imm8_reg:ident,
+                    |$check_reg:ident| $check:expr
+                ) => {
+                    /// A newtype wrapper around `Reg`.
+                    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+                    pub struct $newtype_reg(Reg);
+
+                    impl PartialEq<Reg> for $newtype_reg {
+                        fn eq(&self, other: &Reg) -> bool {
+                            self.0 == *other
+                        }
+                    }
+
+                    impl From<$newtype_reg> for Reg {
+                        fn from(r: $newtype_reg) -> Self {
+                            r.0
+                        }
+                    }
+
+                    impl $newtype_reg {
+                        /// Create this newtype from the given register, or return `None` if the register
+                        /// is not a valid instance of this newtype.
+                        pub fn new($check_reg: Reg) -> Option<Self> {
+                            if $check {
+                                Some(Self($check_reg))
+                            } else {
+                                None
+                            }
+                        }
+
+                        /// Like `Self::new(r).unwrap()` but with a better panic message on
+                        /// failure.
+                        pub fn unwrap_new($check_reg: Reg) -> Self {
+                            if $check {
+                                Self($check_reg)
+                            } else {
+                                panic!(
+                                    "cannot construct {} from register {:?} with register class {:?}",
+                                    stringify!($newtype_reg),
+                                    $check_reg,
+                                    $check_reg.class(),
+                                )
+                            }
+                        }
+
+                        /// Get this newtype's underlying `Reg`.
+                        pub fn to_reg(self) -> Reg {
+                            self.0
+                        }
+                    }
+
+                    // Convenience impl so that people working with this newtype can use it
+                    // "just like" a plain `Reg`.
+                    //
+                    // NB: We cannot implement `DerefMut` because that would let people do
+                    // nasty stuff like `*my_gpr.deref_mut() = some_xmm_reg`, breaking the
+                    // invariants that `Gpr` provides.
+                    impl core::ops::Deref for $newtype_reg {
+                        type Target = Reg;
+
+                        fn deref(&self) -> &Reg {
+                            &self.0
+                        }
+                    }
+
+                    /// If you know what you're doing, you can explicitly mutably borrow the
+                    /// underlying `Reg`. Don't make it point to the wrong type of register
+                    /// please.
+                    impl AsMut<Reg> for $newtype_reg {
+                        fn as_mut(&mut self) -> &mut Reg {
+                            &mut self.0
+                        }
+                    }
+
+                    /// Writable Gpr.
+                    pub type $newtype_writable_reg = Writable<$newtype_reg>;
+
+                    #[allow(dead_code)] // Used by some newtypes and not others.
+                    /// Optional writable Gpr.
+                    pub type $newtype_option_writable_reg = Option<Writable<$newtype_reg>>;
+
+                    impl ToWritableReg for $newtype_writable_reg {
+                        fn to_writable_reg(&self) -> Writable<Reg> {
+                            Writable::from_reg(self.to_reg().to_reg())
+                        }
+                    }
+
+                    impl FromWritableReg for $newtype_writable_reg {
+                        fn from_writable_reg(w: Writable<Reg>) -> Option<Self> {
+                            Some(Writable::from_reg($newtype_reg::new(w.to_reg())?))
+                        }
+                    }
+
+                    $(
+                        /// A newtype wrapper around `RegMem` for general-purpose registers.
+                        #[derive(Clone, Debug)]
+                        pub struct $newtype_reg_mem(RegMem);
+
+                        impl From<$newtype_reg_mem> for RegMem {
+                            fn from(rm: $newtype_reg_mem) -> Self {
+                                rm.0
+                            }
+                        }
+                        impl<'a> From<&'a $newtype_reg_mem> for &'a RegMem {
+                            fn from(rm: &'a $newtype_reg_mem) -> &'a RegMem {
+                                &rm.0
+                            }
+                        }
+
+                        impl From<$newtype_reg> for $newtype_reg_mem {
+                            fn from(r: $newtype_reg) -> Self {
+                                $newtype_reg_mem(RegMem::reg(r.into()))
+                            }
+                        }
+
+                        impl $newtype_reg_mem {
+                            /// Construct a `RegMem` newtype from the given `RegMem`, or return
+                            /// `None` if the `RegMem` is not a valid instance of this `RegMem`
+                            /// newtype.
+                            pub fn new(rm: RegMem) -> Option<Self> {
+                                match rm {
+                                    RegMem::Mem { addr } => {
+                                        let mut _allow = true;
+                                        $(
+                                            if $aligned {
+                                                _allow = addr.aligned();
+                                            }
+                                        )?
+                                        if _allow {
+                                            Some(Self(RegMem::Mem { addr }))
+                                        } else {
+                                            None
+                                        }
+                                    }
+                                    RegMem::Reg { reg } => Some($newtype_reg::new(reg)?.into()),
+                                }
+                            }
+
+                            /// Like `Self::new(rm).unwrap()` but with better panic messages
+                            /// in case of failure.
+                            pub fn unwrap_new(rm: RegMem) -> Self {
+                                match rm {
+                                    RegMem::Mem { addr } => {
+                                        $(
+                                            if $aligned && !addr.aligned() {
+                                                panic!(
+                                                    "cannot create {} from an unaligned memory address: {addr:?}",
+                                                    stringify!($newtype_reg_mem),
+                                                );
+                                            }
+                                        )?
+                                        Self(RegMem::Mem { addr })
+                                    }
+                                    RegMem::Reg { reg } => $newtype_reg::unwrap_new(reg).into(),
+                                }
+                            }
+
+                            /// Convert this newtype into its underlying `RegMem`.
+                            pub fn to_reg_mem(self) -> RegMem {
+                                self.0
+                            }
+
+                            // #[allow(dead_code)] // Used by some newtypes and not others.
+                            // pub(crate) fn get_operands(&mut self, collector: &mut impl OperandVisitor) {
+                            //     self.0.get_operands(collector);
+                            // }
+                        }
+                        // impl PrettyPrint for $newtype_reg_mem {
+                        //     fn pretty_print(&self, size: u8) -> String {
+                        //         self.0.pretty_print(size)
+                        //     }
+                        // }
+                    )*
+
+                    $(
+                        /// A newtype wrapper around `RegMemImm`.
+                        #[derive(Clone, Debug)]
+                        pub struct $newtype_reg_mem_imm(RegMemImm);
+
+                        impl From<$newtype_reg_mem_imm> for RegMemImm {
+                            fn from(rmi: $newtype_reg_mem_imm) -> RegMemImm {
+                                rmi.0
+                            }
+                        }
+                        impl<'a> From<&'a $newtype_reg_mem_imm> for &'a RegMemImm {
+                            fn from(rmi: &'a $newtype_reg_mem_imm) -> &'a RegMemImm {
+                                &rmi.0
+                            }
+                        }
+
+                        impl From<$newtype_reg> for $newtype_reg_mem_imm {
+                            fn from(r: $newtype_reg) -> Self {
+                                $newtype_reg_mem_imm(RegMemImm::reg(r.into()))
+                            }
+                        }
+
+                        impl $newtype_reg_mem_imm {
+                            /// Construct this newtype from the given `RegMemImm`, or return
+                            /// `None` if the `RegMemImm` is not a valid instance of this
+                            /// newtype.
+                            pub fn new(rmi: RegMemImm) -> Option<Self> {
+                                match rmi {
+                                    RegMemImm::Imm { .. } => Some(Self(rmi)),
+                                    RegMemImm::Mem { addr } => {
+                                        let mut _allow = true;
+                                        $(
+                                            if $aligned_imm {
+                                                _allow = addr.aligned();
+                                            }
+                                        )?
+                                        if _allow {
+                                            Some(Self(RegMemImm::Mem { addr }))
+                                        } else {
+                                            None
+                                        }
+                                    }
+                                    RegMemImm::Reg { reg } => Some($newtype_reg::new(reg)?.into()),
+                                }
+                            }
+
+                            /// Like `Self::new(rmi).unwrap()` but with better panic
+                            /// messages in case of failure.
+                            pub fn unwrap_new(rmi: RegMemImm) -> Self {
+                                match rmi {
+                                    RegMemImm::Imm { .. } => Self(rmi),
+                                    RegMemImm::Mem { addr } => {
+                                        $(
+                                            if $aligned_imm && !addr.aligned() {
+                                                panic!(
+                                                    "cannot construct {} from unaligned memory address: {:?}",
+                                                    stringify!($newtype_reg_mem_imm),
+                                                    addr,
+                                                );
+                                            }
+                                        )?
+                                        Self(RegMemImm::Mem { addr })
+
+                                    }
+                                    RegMemImm::Reg { reg } => $newtype_reg::unwrap_new(reg).into(),
+                                }
+                            }
+
+                            /// Convert this newtype into its underlying `RegMemImm`.
+                            #[allow(dead_code)] // Used by some newtypes and not others.
+                            pub fn to_reg_mem_imm(self) -> RegMemImm {
+                                self.0
+                            }
+
+                            // #[allow(dead_code)] // Used by some newtypes and not others.
+                            // pub(crate) fn get_operands(&mut self, collector: &mut impl OperandVisitor) {
+                            //     self.0.get_operands(collector);
+                            // }
+                        }
+
+                        // impl PrettyPrint for $newtype_reg_mem_imm {
+                        //     fn pretty_print(&self, size: u8) -> String {
+                        //         self.0.pretty_print(size)
+                        //     }
+                        // }
+                    )*
+
+                    /// A newtype wrapper around `Imm8Reg`.
+                    #[derive(Clone, Debug)]
+                    #[allow(dead_code)] // Used by some newtypes and not others.
+                    pub struct $newtype_imm8_reg(Imm8Reg);
+
+                    impl From<$newtype_reg> for $newtype_imm8_reg {
+                        fn from(r: $newtype_reg) -> Self {
+                            Self(Imm8Reg::Reg { reg: r.to_reg() })
+                        }
+                    }
+
+                    impl $newtype_imm8_reg {
+                        /// Construct this newtype from the given `Imm8Reg`, or return
+                        /// `None` if the `Imm8Reg` is not a valid instance of this newtype.
+                        #[allow(dead_code)] // Used by some newtypes and not others.
+                        pub fn new(imm8_reg: Imm8Reg) -> Option<Self> {
+                            match imm8_reg {
+                                Imm8Reg::Imm8 { .. } => Some(Self(imm8_reg)),
+                                Imm8Reg::Reg { reg } => Some($newtype_reg::new(reg)?.into()),
+                            }
+                        }
+
+                        /// Like `Self::new(imm8_reg).unwrap()` but with better panic
+                        /// messages on failure.
+                        pub fn unwrap_new(imm8_reg: Imm8Reg) -> Self {
+                            match imm8_reg {
+                                Imm8Reg::Imm8 { .. } => Self(imm8_reg),
+                                Imm8Reg::Reg { reg } => $newtype_reg::unwrap_new(reg).into(),
+                            }
+                        }
+
+                        /// Borrow this newtype as its underlying `Imm8Reg`.
+                        #[allow(dead_code)] // Used by some newtypes and not others.
+                        pub fn as_imm8_reg(&self) -> &Imm8Reg {
+                            &self.0
+                        }
+
+                        /// Borrow this newtype as its underlying `Imm8Reg`.
+                        #[allow(dead_code)] // Used by some newtypes and not others.
+                        pub fn as_imm8_reg_mut(&mut self) -> &mut Imm8Reg {
+                            &mut self.0
+                        }
+                    }
+                };
+            }
+
+            // Define a newtype of `Reg` for general-purpose registers.
+            newtype_of_reg!(
+                Gpr,
+                WritableGpr,
+                OptionWritableGpr,
+                reg_mem: (GprMem),
+                reg_mem_imm: (GprMemImm),
+                Imm8Gpr,
+                |reg| reg.class() == RegClass::Int
+            );
+            
+            // Define a newtype of `Reg` for XMM registers.
+            newtype_of_reg!(
+                Xmm,
+                WritableXmm,
+                OptionWritableXmm,
+                reg_mem: (XmmMem, XmmMemAligned aligned:true),
+                reg_mem_imm: (XmmMemImm, XmmMemAlignedImm aligned:true),
+                Imm8Xmm,
+                |reg| reg.class() == RegClass::Float
+            );
+
         }
         #[derive(Clone, Debug)]
         pub enum Inst {
@@ -456,9 +895,9 @@ pub mod isa {
             AluRmiR {
                 size: crate::masm::OperandSize,
                 op: args::AluRmiROpcode,
-                src1: crate::cranelift_codegen::Reg,
-                src2: Reg,
-                dst: WritableReg,
+                src1: args::Gpr,
+                src2: args::GprMemImm,
+                dst: args::WritableGpr,
             },
         }
         pub mod x64_settings {

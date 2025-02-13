@@ -9,7 +9,7 @@ pub use crate::regalloc2::RegClass;
 // so that the rest of Winch should only need to operate
 // on top of the concept of `Reg`.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Reg(PReg);
+pub struct Reg(pub PReg);
 
 pub(crate) type WritableReg = crate::cranelift_codegen::Writable<Reg>;
 

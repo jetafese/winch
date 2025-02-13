@@ -995,10 +995,10 @@ impl Assembler {
     // }
 
     /// Add register and register.
-    pub fn add_rr(&mut self, src: Reg, dst: crate::isa::reg::WritableReg, size: OperandSize) {
+    pub fn add_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
         self.emit(Inst::AluRmiR {
             size: size.into(),
-            op: crate::cranelift_codegen::isa::x64::args::AluRmiROpcode::Add,
+            op: AluRmiROpcode::Add,
             src1: dst.to_reg().into(),
             src2: src.into(),
             dst: dst.map(Into::into),
