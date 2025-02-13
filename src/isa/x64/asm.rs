@@ -2,7 +2,7 @@
 
 use crate::{
     // isa::{reg::Reg, CallingConvention},
-    cranelift_codegen::Reg,
+    isa::reg::Reg,
     masm::OperandSize
 };
 use crate::cranelift_codegen::{
@@ -18,8 +18,13 @@ use crate::cranelift_codegen::{
         // unwind::UnwindInst,
         x64::{
             args::{
-                // self, AluRmiROpcode, Amode, CmpOpcode, DivSignedness, ExtMode, FromWritableReg,
-                // Gpr, GprMem, GprMemImm, Imm8Gpr, Imm8Reg, RegMem, 
+                // self, 
+                AluRmiROpcode, 
+                // Amode, CmpOpcode, DivSignedness, ExtMode, FromWritableReg,
+                Gpr, 
+                // GprMem, 
+                GprMemImm, 
+                // Imm8Gpr, Imm8Reg, RegMem, 
                 RegMemImm,
                 // ShiftKind as CraneliftShiftKind, SseOpcode, SyntheticAmode, WritableGpr,
                 // WritableXmm, Xmm, XmmMem, XmmMemAligned, CC,
@@ -35,7 +40,7 @@ use crate::cranelift_codegen::{
     // PatchRegion, RelocDistance, VCodeConstantData, VCodeConstants, Writable,
 };
 
-// use crate::isa::reg::{WritableReg};
+use crate::isa::reg::WritableReg;
 
 // use super::address::Address;
 // use smallvec::SmallVec;
@@ -75,11 +80,11 @@ impl From<Reg> for RegMemImm {
 //     }
 // }
 
-// impl From<Reg> for Gpr {
-//     fn from(reg: Reg) -> Self {
-//         Gpr::unwrap_new(reg.into())
-//     }
-// }
+impl From<Reg> for Gpr {
+    fn from(reg: Reg) -> Self {
+        Gpr::unwrap_new(reg.into())
+    }
+}
 
 // impl From<Reg> for GprMem {
 //     fn from(value: Reg) -> Self {
