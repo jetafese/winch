@@ -15,8 +15,11 @@
 // use anyhow::Result;
 // use crate::cranelift_codegen::settings::{self, Flags};
 // use crate::cranelift_codegen::{isa::x64::settings as x64_settings, Final, MachBufferFinalized};
+use crate::cranelift_codegen::settings::Flags;
+use crate::cranelift_codegen::isa::x64::x64_settings;
+use crate::target_lexicon::Triple;
+use crate::isa::TargetIsa;
 // use crate::cranelift_codegen::{MachTextSectionBuilder, TextSectionBuilder};
-// use crate::target_lexicon::Triple;
 // use crate::wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
 // use crate::wasmtime_cranelift::CompiledFunction;
 // use crate::wasmtime_environ::{ModuleTranslation, ModuleTypesBuilder, Tunables, VMOffsets, WasmFuncType};
@@ -26,7 +29,7 @@
 // mod abi;
 // mod address;
 pub mod asm;
-// mod masm;
+pub mod masm;
 // // Not all the fpr and gpr constructors are used at the moment;
 // // in that sense, this directive is a temporary measure to avoid
 // // dead code warnings.
@@ -48,28 +51,28 @@ pub mod regs;
 //     )
 // }
 
-// /// x64 ISA.
-// pub(crate) struct X64 {
-//     /// The target triple.
-//     triple: Triple,
-//     /// ISA specific flags.
-//     isa_flags: x64_settings::Flags,
-//     /// Shared flags.
-//     shared_flags: Flags,
-// }
+/// x64 ISA.
+pub(crate) struct X64 {
+    /// The target triple.
+    triple: Triple,
+    /// ISA specific flags.
+    isa_flags: x64_settings::Flags,
+    /// Shared flags.
+    shared_flags: Flags,
+}
 
-// impl X64 {
-//     /// Create a x64 ISA.
-//     pub fn new(triple: Triple, shared_flags: Flags, isa_flags: x64_settings::Flags) -> Self {
-//         Self {
-//             isa_flags,
-//             shared_flags,
-//             triple,
-//         }
-//     }
-// }
+impl X64 {
+    /// Create a x64 ISA.
+    pub fn new(triple: Triple, shared_flags: Flags, isa_flags: x64_settings::Flags) -> Self {
+        Self {
+            isa_flags,
+            shared_flags,
+            triple,
+        }
+    }
+}
 
-// impl TargetIsa for X64 {
+impl TargetIsa for X64 {
 //     fn name(&self) -> &'static str {
 //         "x64"
 //     }
@@ -173,4 +176,4 @@ pub mod regs;
 //     fn page_size_align_log2(&self) -> u8 {
 //         12
 //     }
-// }
+}

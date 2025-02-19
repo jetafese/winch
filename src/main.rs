@@ -30,6 +30,12 @@
 #![no_builtins]
 #![no_std]
 #![no_main]
+#![feature(default_alloc_error_handler)]
+
+use libc_alloc::LibcAlloc;
+
+#[global_allocator]
+static ALLOCATOR: LibcAlloc = LibcAlloc;
 
 #[link(name="c")]
 extern "C" {}
@@ -38,19 +44,22 @@ pub mod isa;
 // pub use isa::*;
 mod masm;
 mod regalloc;
-// mod regset;
+mod regset;
+mod codegen;
 // mod stack;
 // mod visitor;
 /* stubbed libraries */
 mod cranelift_codegen;
-// mod wasmtime_environ;
+mod wasmtime_environ;
 mod regalloc2;
+mod target_lexicon;
 
 use cranelift_codegen::Writable;
-use isa::reg::Reg;
+use isa::reg::{self, Reg};
 use regalloc2::PReg;
-use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32};
-
+use regset::RegBitSet;
+use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32, nondet_u8};
+use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 // extern "C" {
 //     fn __VERIFIER_error() -> !;
 // //     fn __VERIFIER_assume(pred: i32);
@@ -82,21 +91,25 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 pub extern fn main() {
     let v: u32 = nondet_u32();
     match v {
-        0 => add_rr(),
+        0 => checked_uadd(),
         1 => sub_ir(),
+        3 => compile_function(),
         _ => (),
     }
 }
 
 #[no_mangle]
-fn add_rr() {
+fn checked_uadd() {
     assume(true);
     let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
     let shared_flags = cranelift_codegen::settings::Flags::new();
-    let mut asm = isa::x64::asm::Assembler::new(shared_flags, isa_flags);
-    let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
-    let dst = isa::x64::regs::scratch();
-    asm.add_rr(src, Writable::from_reg(dst),masm::OperandSize::S32);
+    let ptr_size = nondet_u8();
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    masm_64.err();
+    // let mut asm = isa::x64::asm::Assembler::new(shared_flags, isa_flags);
+    // let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    // let dst = isa::x64::regs::scratch();
+    // asm.add_rr(src, Writable::from_reg(dst),masm::OperandSize::S32);
     assert(true);
 }
 
@@ -109,4 +122,48 @@ fn sub_ir() {
     let dst = isa::x64::regs::scratch();
     asm.sub_ir(src, Writable::from_reg(dst),masm::OperandSize::S32);
     assert(true);
+}
+
+#[no_mangle]
+fn compile_function() {
+    // let pointer_bytes = self.pointer_bytes();
+    // let vmoffsets = VMOffsets::new(pointer_bytes, &translation.module);
+
+    // let mut body = body.get_binary_reader();
+    // let mut masm = X64Masm::new(
+    //     pointer_bytes,
+    //     self.shared_flags.clone(),
+    //     self.isa_flags.clone(),
+    // )?;
+    // let stack = Stack::new();
+
+    // let abi_sig = wasm_sig::<abi::X64ABI>(sig);
+
+    // let env = FuncEnv::new(
+    //     &vmoffsets,
+    //     translation,
+    //     types,
+    //     builtins,
+    //     self,
+    //     abi::X64ABI::ptr_type(),
+    // );
+    // let type_converter = TypeConverter::new(env.translation, env.types);
+    // let defined_locals =
+    //     DefinedLocals::new::<abi::X64ABI>(&type_converter, &mut body, validator)?;
+    // let frame = Frame::new::<abi::X64ABI>(&abi_sig, &defined_locals)?;
+
+    let gpr = RegBitSet::int(
+        ALL_GPR.into(),
+        NON_ALLOCATABLE_GPR.into(),
+        usize::try_from(MAX_GPR).unwrap(),
+    );
+    let fpr = RegBitSet::float(
+        ALL_FPR.into(),
+        NON_ALLOCATABLE_FPR.into(),
+        usize::try_from(MAX_FPR).unwrap(),
+    );
+    let regalloc = regalloc::RegAlloc::from(gpr, fpr);
+    // let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
+    let codegen_context = codegen::CodeGenContext::new(regalloc);
+    // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
 }

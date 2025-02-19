@@ -668,7 +668,7 @@ pub enum RoundingMode {
 // /// This approach allows for a more general interface that can be restricted
 // /// where needed, in the case of architectures that use a two-argument form.
 
-// pub(crate) trait MacroAssembler {
+pub(crate) trait MacroAssembler {
 //     /// The addressing mode.
 //     type Address: Copy + Debug;
 
@@ -1263,4 +1263,4 @@ pub enum RoundingMode {
 //     /// instruction (e.g. x64) so full access to `CodeGenContext` is provided.
 //     fn mul_wide(&mut self, context: &mut CodeGenContext<Emission>, kind: MulWideKind)
 //         -> Result<()>;
-// }
+}

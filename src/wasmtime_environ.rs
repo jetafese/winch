@@ -2,121 +2,121 @@
 pub const FUNCREF_INIT_BIT: usize = 1;
 pub const FUNCREF_MASK: usize = !FUNCREF_INIT_BIT;
 
-pub struct WasmparserTypeConverter<'a, F> {}
+// pub struct WasmparserTypeConverter<'a, F> {}
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum EngineOrModuleTypeIndex {
-    Engine(_),
-    Module(_),
-    RecGroup(_),
-}
+// #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+// pub enum EngineOrModuleTypeIndex {
+//     Engine(_),
+//     Module(_),
+//     RecGroup(_),
+// }
 
-pub trait TypeConvert {
-    /// Converts a wasmparser heap type to a wasmtime type
-    fn convert_heap_type(&self, ty: crate::wasmparser::HeapType) -> WasmHeapType {
-        match ty {
-            crate::wasmparser::HeapType::Concrete(i) => self.lookup_heap_type(i),
-            crate::wasmparser::HeapType::Abstract { ty, shared: false } => match ty {
-                crate::wasmparser::AbstractHeapType::Extern => WasmHeapType::Extern,
-                crate::wasmparser::AbstractHeapType::NoExtern => WasmHeapType::NoExtern,
-                crate::wasmparser::AbstractHeapType::Func => WasmHeapType::Func,
-                crate::wasmparser::AbstractHeapType::NoFunc => WasmHeapType::NoFunc,
-                crate::wasmparser::AbstractHeapType::Any => WasmHeapType::Any,
-                crate::wasmparser::AbstractHeapType::Eq => WasmHeapType::Eq,
-                crate::wasmparser::AbstractHeapType::I31 => WasmHeapType::I31,
-                crate::wasmparser::AbstractHeapType::Array => WasmHeapType::Array,
-                crate::wasmparser::AbstractHeapType::Struct => WasmHeapType::Struct,
-                crate::wasmparser::AbstractHeapType::None => WasmHeapType::None,
+// pub trait TypeConvert {
+//     /// Converts a wasmparser heap type to a wasmtime type
+//     fn convert_heap_type(&self, ty: crate::wasmparser::HeapType) -> WasmHeapType {
+//         match ty {
+//             crate::wasmparser::HeapType::Concrete(i) => self.lookup_heap_type(i),
+//             crate::wasmparser::HeapType::Abstract { ty, shared: false } => match ty {
+//                 crate::wasmparser::AbstractHeapType::Extern => WasmHeapType::Extern,
+//                 crate::wasmparser::AbstractHeapType::NoExtern => WasmHeapType::NoExtern,
+//                 crate::wasmparser::AbstractHeapType::Func => WasmHeapType::Func,
+//                 crate::wasmparser::AbstractHeapType::NoFunc => WasmHeapType::NoFunc,
+//                 crate::wasmparser::AbstractHeapType::Any => WasmHeapType::Any,
+//                 crate::wasmparser::AbstractHeapType::Eq => WasmHeapType::Eq,
+//                 crate::wasmparser::AbstractHeapType::I31 => WasmHeapType::I31,
+//                 crate::wasmparser::AbstractHeapType::Array => WasmHeapType::Array,
+//                 crate::wasmparser::AbstractHeapType::Struct => WasmHeapType::Struct,
+//                 crate::wasmparser::AbstractHeapType::None => WasmHeapType::None,
 
-                crate::wasmparser::AbstractHeapType::Exn
-                | crate::wasmparser::AbstractHeapType::NoExn
-                | crate::wasmparser::AbstractHeapType::Cont
-                | crate::wasmparser::AbstractHeapType::NoCont => {
-                    unimplemented!("unsupported heap type {ty:?}");
-                }
-            },
-            _ => unimplemented!("unsupported heap type {ty:?}"),
-        }
-    }
+//                 crate::wasmparser::AbstractHeapType::Exn
+//                 | crate::wasmparser::AbstractHeapType::NoExn
+//                 | crate::wasmparser::AbstractHeapType::Cont
+//                 | crate::wasmparser::AbstractHeapType::NoCont => {
+//                     unimplemented!("unsupported heap type {ty:?}");
+//                 }
+//             },
+//             _ => unimplemented!("unsupported heap type {ty:?}"),
+//         }
+//     }
 
-    /// Converts the specified type index from a heap type into a canonicalized
-    /// heap type.
-    fn lookup_heap_type(&self, index: crate::wasmparser::UnpackedIndex) -> WasmHeapType;
+//     /// Converts the specified type index from a heap type into a canonicalized
+//     /// heap type.
+//     fn lookup_heap_type(&self, index: crate::wasmparser::UnpackedIndex) -> WasmHeapType;
 
-  /// Converts the specified type index from a heap type into a canonicalized
-    /// heap type.
-    fn lookup_type_index(&self, index: crate::wasmparser::UnpackedIndex) -> EngineOrModuleTypeIndex;
-}
+//   /// Converts the specified type index from a heap type into a canonicalized
+//     /// heap type.
+//     fn lookup_type_index(&self, index: crate::wasmparser::UnpackedIndex) -> EngineOrModuleTypeIndex;
+// }
 
-pub enum IndexType {
-    I32,
-    I64,
-}
+// pub enum IndexType {
+//     I32,
+//     I64,
+// }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct PrimaryMap<K, V> {}
+// #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+// pub struct PrimaryMap<K, V> {}
 
-#[derive(Default)]
-pub struct ModuleTranslation<'data> {}
-pub struct ModuleTypesBuilder {}
+// #[derive(Default)]
+// pub struct ModuleTranslation<'data> {}
+// pub struct ModuleTypesBuilder {}
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct Limits {
-    pub min: u64,
-    pub max: Option<u64>,
-}
+// #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+// pub struct Limits {
+//     pub min: u64,
+//     pub max: Option<u64>,
+// }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct Memory {
-    pub idx_type: IndexType,
-    pub limits: Limits,
-    pub shared: bool,
-    pub page_size_log2: u8,
-}
+// #[derive(Debug, Clone, Hash, Eq, PartialEq)]
+// pub struct Memory {
+//     pub idx_type: IndexType,
+//     pub limits: Limits,
+//     pub shared: bool,
+//     pub page_size_log2: u8,
+// }
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct Table {
-    /// The type of the index used to access the table.
-    pub idx_type: IndexType,
-    /// Tables are constrained by limits for their minimum and optionally maximum size.
-    /// The limits are given in numbers of entries.
-    pub limits: Limits,
-    /// The table elements' Wasm type.
-    pub ref_type: WasmRefType,
-}
+// #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+// pub struct Table {
+//     /// The type of the index used to access the table.
+//     pub idx_type: IndexType,
+//     /// Tables are constrained by limits for their minimum and optionally maximum size.
+//     /// The limits are given in numbers of entries.
+//     pub limits: Limits,
+//     /// The table elements' Wasm type.
+//     pub ref_type: WasmRefType,
+// }
 
-pub trait Signed {
-    /// The signed integer for this type which has the same width.
-    type Signed;
+// pub trait Signed {
+//     /// The signed integer for this type which has the same width.
+//     type Signed;
 
-    /// View this unsigned integer as a signed integer of the same width.
-    ///
-    /// All bits are preserved.
-    fn signed(self) -> Self::Signed;
-}
+//     /// View this unsigned integer as a signed integer of the same width.
+//     ///
+//     /// All bits are preserved.
+//     fn signed(self) -> Self::Signed;
+// }
 
-/// Index type of a function (imported or defined) inside the WebAssembly module.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct FuncIndex(u32);
+// /// Index type of a function (imported or defined) inside the WebAssembly module.
+// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+// pub struct FuncIndex(u32);
 
-/// Index type of a global variable (imported or defined) inside the WebAssembly module.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct GlobalIndex(u32);
+// /// Index type of a global variable (imported or defined) inside the WebAssembly module.
+// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+// pub struct GlobalIndex(u32);
 
-/// Index type of a linear memory (imported or defined) inside the WebAssembly module.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct MemoryIndex(u32);
+// /// Index type of a linear memory (imported or defined) inside the WebAssembly module.
+// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+// pub struct MemoryIndex(u32);
 
-/// Index type of a table (imported or defined) inside the WebAssembly module.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct TableIndex(u32);
+// /// Index type of a table (imported or defined) inside the WebAssembly module.
+// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+// pub struct TableIndex(u32);
 
-/// Index type of a type (imported or defined) inside the WebAssembly module.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct TypeIndex(u32);
+// /// Index type of a type (imported or defined) inside the WebAssembly module.
+// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+// pub struct TypeIndex(u32);
 
-pub struct WasmFuncType {
-}
+// pub struct WasmFuncType {
+// }
 
 /// WebAssembly reference type -- equivalent of `wasmparser`'s RefType
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -166,99 +166,99 @@ pub enum WasmHeapType {
     None,
 }
 
-/// Helper macro to define a builtin type such as `BuiltinFunctionIndex` and
-/// `ComponentBuiltinFunctionIndex` using the iterator macro, e.g.
-/// `foreach_builtin_function`, as the way to generate accessor methods.
-macro_rules! declare_builtin_index {
-    ($index_name:ident, $iter:ident) => {
-        /// An index type for builtin functions.
-        #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        pub struct $index_name(u32);
+// /// Helper macro to define a builtin type such as `BuiltinFunctionIndex` and
+// /// `ComponentBuiltinFunctionIndex` using the iterator macro, e.g.
+// /// `foreach_builtin_function`, as the way to generate accessor methods.
+// macro_rules! declare_builtin_index {
+//     ($index_name:ident, $iter:ident) => {
+//         /// An index type for builtin functions.
+//         #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+//         pub struct $index_name(u32);
 
-        impl $index_name {
-            /// Create a new builtin from its raw index
-            pub const fn from_u32(i: u32) -> Self {
-                assert!(i < Self::len());
-                Self(i)
-            }
+//         impl $index_name {
+//             /// Create a new builtin from its raw index
+//             pub const fn from_u32(i: u32) -> Self {
+//                 assert!(i < Self::len());
+//                 Self(i)
+//             }
 
-            /// Return the index as an u32 number.
-            pub const fn index(&self) -> u32 {
-                self.0
-            }
+//             /// Return the index as an u32 number.
+//             pub const fn index(&self) -> u32 {
+//                 self.0
+//             }
 
-            $iter!(declare_builtin_index_constructors);
-        }
-    };
-}
+//             $iter!(declare_builtin_index_constructors);
+//         }
+//     };
+// }
 
-/// Helper macro used by the above macro.
-macro_rules! declare_builtin_index_constructors {
-    (
-        $(
-            $( #[$attr:meta] )*
-            $name:ident( $( $pname:ident: $param:ident ),* ) $( -> $result:ident )?;
-        )*
-    ) => {
-        declare_builtin_index_constructors!(
-            @indices;
-            0;
-            $( $( #[$attr] )* $name; )*
-        );
+// /// Helper macro used by the above macro.
+// macro_rules! declare_builtin_index_constructors {
+//     (
+//         $(
+//             $( #[$attr:meta] )*
+//             $name:ident( $( $pname:ident: $param:ident ),* ) $( -> $result:ident )?;
+//         )*
+//     ) => {
+//         declare_builtin_index_constructors!(
+//             @indices;
+//             0;
+//             $( $( #[$attr] )* $name; )*
+//         );
 
-        /// Returns a symbol name for this builtin.
-        pub fn name(&self) -> &'static str {
-            $(
-                $( #[$attr] )*
-                if *self == Self::$name() {
-                    return stringify!($name);
-                }
-            )*
-            unreachable!()
-        }
-    };
+//         /// Returns a symbol name for this builtin.
+//         pub fn name(&self) -> &'static str {
+//             $(
+//                 $( #[$attr] )*
+//                 if *self == Self::$name() {
+//                     return stringify!($name);
+//                 }
+//             )*
+//             unreachable!()
+//         }
+//     };
 
-    // Base case: no more indices to declare, so define the total number of
-    // function indices.
-    (
-        @indices;
-        $len:expr;
-    ) => {
-        /// Returns the total number of builtin functions.
-        pub const fn len() -> u32 {
-            $len
-        }
-    };
+//     // Base case: no more indices to declare, so define the total number of
+//     // function indices.
+//     (
+//         @indices;
+//         $len:expr;
+//     ) => {
+//         /// Returns the total number of builtin functions.
+//         pub const fn len() -> u32 {
+//             $len
+//         }
+//     };
 
-    // Recursive case: declare the next index, and then keep declaring the rest of
-    // the indices.
-    (
-         @indices;
-         $index:expr;
-         $( #[$this_attr:meta] )*
-         $this_name:ident;
-         $(
-             $( #[$rest_attr:meta] )*
-             $rest_name:ident;
-         )*
-    ) => {
-        $( #[$this_attr] )*
-        #[allow(missing_docs, reason = "macro-generated")]
-        pub const fn $this_name() -> Self {
-            Self($index)
-        }
+//     // Recursive case: declare the next index, and then keep declaring the rest of
+//     // the indices.
+//     (
+//          @indices;
+//          $index:expr;
+//          $( #[$this_attr:meta] )*
+//          $this_name:ident;
+//          $(
+//              $( #[$rest_attr:meta] )*
+//              $rest_name:ident;
+//          )*
+//     ) => {
+//         $( #[$this_attr] )*
+//         #[allow(missing_docs, reason = "macro-generated")]
+//         pub const fn $this_name() -> Self {
+//             Self($index)
+//         }
 
-        declare_builtin_index_constructors!(
-            @indices;
-            ($index + 1);
-            $( $( #[$rest_attr] )* $rest_name; )*
-        );
-    }
-}
+//         declare_builtin_index_constructors!(
+//             @indices;
+//             ($index + 1);
+//             $( $( #[$rest_attr] )* $rest_name; )*
+//         );
+//     }
+// }
 
-use crate::foreach_builtin_function;
-// Define `struct BuiltinFunctionIndex`
-declare_builtin_index!(BuiltinFunctionIndex, foreach_builtin_function);
+// use crate::foreach_builtin_function;
+// // Define `struct BuiltinFunctionIndex`
+// declare_builtin_index!(BuiltinFunctionIndex, foreach_builtin_function);
 
 macro_rules! define_tunables {
     (
@@ -284,7 +284,7 @@ macro_rules! define_tunables {
 
         /// Optional tunable configuration options used in `wasmtime::Config`
         #[derive(Default, Clone)]
-        #[allow(missing_docs, reason = "macro-generated fields")]
+        // #[allow(missing_docs, reason = "macro-generated fields")]
         pub struct $config_tunables {
             $(pub $field: Option<$field_ty>,)*
         }
@@ -639,5 +639,12 @@ pub trait PtrSize {
     #[inline]
     fn vmctx_dynamic_data_start(&self) -> u8 {
         self.vmctx_type_ids_array() + self.size()
+    }
+}
+
+impl PtrSize for u8 {
+    #[inline]
+    fn size(&self) -> u8 {
+        *self
     }
 }
