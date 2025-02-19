@@ -5,12 +5,19 @@ extern "C" {
     fn __VERIFIER_assume(pred: i32);
     fn __VERIFIER_assert(pred: i32);
     fn __VERIFIER_nondet_u32() -> u32;
+    fn __VERIFIER_nondet_u8() -> u8;
     fn __VERIFIER_nondet_i32() -> i32;
 }
 
 pub fn nondet_u32() -> u32 {
     unsafe {
         __VERIFIER_nondet_u32()
+    }
+}
+
+pub fn nondet_u8() -> u8 {
+    unsafe {
+        __VERIFIER_nondet_u8()
     }
 }
 
