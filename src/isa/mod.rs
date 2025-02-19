@@ -149,9 +149,9 @@ pub enum CallingConvention {
 //     }
 // }
 
-// /// A trait representing commonalities between the supported
-// /// instruction set architectures.
-// pub trait TargetIsa: Send + Sync {
+/// A trait representing commonalities between the supported
+/// instruction set architectures.
+pub trait TargetIsa: Send + Sync {
 //     /// Get the name of the ISA.
 //     fn name(&self) -> &'static str;
 
@@ -169,17 +169,17 @@ pub enum CallingConvention {
 //         false
 //     }
 
-//     /// Compile a function.
-//     fn compile_function(
-//         &self,
-//         sig: &WasmFuncType,
-//         body: &FunctionBody,
-//         translation: &ModuleTranslation,
-//         types: &ModuleTypesBuilder,
-//         builtins: &mut BuiltinFunctions,
-//         validator: &mut FuncValidator<ValidatorResources>,
-//         tunables: &Tunables,
-//     ) -> Result<CompiledFunction>;
+    // /// Compile a function.
+    // fn compile_function(
+    //     &self,
+    //     sig: &WasmFuncType,
+    //     body: &FunctionBody,
+    //     translation: &ModuleTranslation,
+    //     types: &ModuleTypesBuilder,
+    //     builtins: &mut BuiltinFunctions,
+    //     validator: &mut FuncValidator<ValidatorResources>,
+    //     tunables: &Tunables,
+    // ) -> Result<CompiledFunction>;
 
 //     /// Get the default calling convention of the underlying target triple.
 //     fn default_call_conv(&self) -> CallConv {
@@ -231,7 +231,7 @@ pub enum CallingConvention {
 //     /// Note that this may be an upper-bound that is larger than necessary for
 //     /// some platforms since it may depend on runtime configuration.
 //     fn page_size_align_log2(&self) -> u8;
-// }
+}
 
 // impl Debug for &dyn TargetIsa {
 //     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
