@@ -8,7 +8,7 @@ pub(crate) struct RegSet {
     fpr: RegBitSet,
 }
 
-use std::ops::{Index, IndexMut};
+use core::ops::{Index, IndexMut};
 
 impl Index<RegClass> for RegSet {
     type Output = RegBitSet;

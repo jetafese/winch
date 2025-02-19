@@ -13,15 +13,15 @@ pub struct Reg(pub PReg);
 
 pub(crate) type WritableReg = crate::cranelift_codegen::Writable<Reg>;
 
-// /// Mark a given register as writable. This macro constructs
-// /// a [`cranelift_codegen::Writable`].
-// macro_rules! writable {
-//     ($e:expr) => {
-//         crate::cranelift_codegen::Writable::from_reg($e)
-//     };
-// }
+/// Mark a given register as writable. This macro constructs
+/// a [`cranelift_codegen::Writable`].
+macro_rules! writable {
+    ($e:expr) => {
+        crate::cranelift_codegen::Writable::from_reg($e)
+    };
+}
 
-// pub(crate) use writable;
+pub(crate) use writable;
 
 impl Reg {
     /// Create a register from its encoding and class.
