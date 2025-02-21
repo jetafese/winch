@@ -213,34 +213,34 @@ pub enum RoundingMode {
 //     }
 // }
 
-// /// Representation of the stack pointer offset.
-// #[derive(Copy, Clone, Eq, PartialEq, Debug, PartialOrd, Ord, Default)]
-// pub struct SPOffset(u32);
+/// Representation of the stack pointer offset.
+#[derive(Copy, Clone, Eq, PartialEq, Debug, PartialOrd, Ord, Default)]
+pub struct SPOffset(u32);
 
-// impl SPOffset {
-//     pub fn from_u32(offs: u32) -> Self {
-//         Self(offs)
-//     }
+impl SPOffset {
+    pub fn from_u32(offs: u32) -> Self {
+        Self(offs)
+    }
 
-//     pub fn as_u32(&self) -> u32 {
-//         self.0
-//     }
-// }
+    pub fn as_u32(&self) -> u32 {
+        self.0
+    }
+}
 
-// /// A stack slot.
-// #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-// pub struct StackSlot {
-//     /// The location of the slot, relative to the stack pointer.
-//     pub offset: SPOffset,
-//     /// The size of the slot, in bytes.
-//     pub size: u32,
-// }
+/// A stack slot.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct StackSlot {
+    /// The location of the slot, relative to the stack pointer.
+    pub offset: SPOffset,
+    /// The size of the slot, in bytes.
+    pub size: u32,
+}
 
-// impl StackSlot {
-//     pub fn new(offs: SPOffset, size: u32) -> Self {
-//         Self { offset: offs, size }
-//     }
-// }
+impl StackSlot {
+    pub fn new(offs: SPOffset, size: u32) -> Self {
+        Self { offset: offs, size }
+    }
+}
 
 // /// Kinds of integer binary comparison in WebAssembly. The [`MacroAssembler`]
 // /// implementation for each ISA is responsible for emitting the correct

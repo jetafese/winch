@@ -1,7 +1,8 @@
-use crate::{codegen::CodeGenError, isa::reg::Reg, masm::StackSlot};
-use anyhow::{anyhow, Result};
+// use crate::{codegen::CodeGenError, isa::reg::Reg, masm::StackSlot};
+use crate::{isa::reg::Reg, masm::StackSlot};
+use anyhow::{anyhow, Error, Result};
 use smallvec::SmallVec;
-use crate::wasmparser::{Ieee32, Ieee64};
+// use crate::wasmparser::{Ieee32, Ieee64};
 use crate::wasmtime_environ::WasmValType;
 
 /// A typed register value used to track register values in the value
@@ -85,9 +86,9 @@ pub(crate) enum Val {
     /// I64 Constant.
     I64(i64),
     /// F32 Constant.
-    F32(Ieee32),
-    /// F64 Constant.
-    F64(Ieee64),
+    // F32(Ieee32),
+    // /// F64 Constant.
+    // F64(Ieee64),
     /// V128 Constant.
     V128(i128),
     /// A register value.
@@ -134,14 +135,14 @@ impl Val {
         Self::I64(v)
     }
 
-    /// Create a new F32 constant value.
-    pub fn f32(v: Ieee32) -> Self {
-        Self::F32(v)
-    }
+    // /// Create a new F32 constant value.
+    // pub fn f32(v: Ieee32) -> Self {
+    //     Self::F32(v)
+    // }
 
-    pub fn f64(v: Ieee64) -> Self {
-        Self::F64(v)
-    }
+    // pub fn f64(v: Ieee64) -> Self {
+    //     Self::F64(v)
+    // }
 
     /// Create a new V128 constant value.
     pub fn v128(v: i128) -> Self {
@@ -288,7 +289,7 @@ impl Stack {
         if self.len() >= n {
             Ok(self.len() - n)
         } else {
-            Err(anyhow!(CodeGenError::missing_values_in_stack()))
+            Err(anyhow!(Error::new("missing_values_in_stack")))
         }
     }
 
