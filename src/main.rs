@@ -46,7 +46,8 @@ mod masm;
 mod regalloc;
 mod regset;
 mod codegen;
-// mod stack;
+mod stack;
+mod frame;
 // mod visitor;
 /* stubbed libraries */
 mod cranelift_codegen;
@@ -55,11 +56,13 @@ mod regalloc2;
 mod target_lexicon;
 
 use cranelift_codegen::Writable;
-use isa::reg::{self, Reg};
-use regalloc2::PReg;
+// use isa::reg::{self, Reg};
+// use regalloc2::PReg;
 use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32, nondet_u8};
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
+use stack::Stack;
+
 // extern "C" {
 //     fn __VERIFIER_error() -> !;
 // //     fn __VERIFIER_assume(pred: i32);
@@ -135,7 +138,7 @@ fn compile_function() {
     //     self.shared_flags.clone(),
     //     self.isa_flags.clone(),
     // )?;
-    // let stack = Stack::new();
+    let stack = Stack::new();
 
     // let abi_sig = wasm_sig::<abi::X64ABI>(sig);
 
@@ -164,6 +167,7 @@ fn compile_function() {
     );
     let regalloc = regalloc::RegAlloc::from(gpr, fpr);
     // let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
-    let codegen_context = codegen::CodeGenContext::new(regalloc);
+    let codegen_context = codegen::CodeGenContext::new(regalloc, stack);
     // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
+    assert(true);
 }

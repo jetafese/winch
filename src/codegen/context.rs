@@ -1,5 +1,5 @@
-use anyhow::{bail, ensure, Result};
-use crate::wasmtime_environ::{VMOffsets, WasmHeapType, WasmValType};
+// use anyhow::{bail, ensure, Result};
+// use crate::wasmtime_environ::{VMOffsets, WasmHeapType, WasmValType};
 
 // use super::ControlStackFrame;
 use crate::{
@@ -7,11 +7,12 @@ use crate::{
     // codegen::{CodeGenError, CodeGenPhase, Emission, Prologue},
     codegen::{CodeGenPhase, Emission, Prologue},
     // frame::Frame,
-    isa::reg::RegClass,
+    // isa::reg::RegClass,
     // masm::{MacroAssembler, OperandSize, RegImm, SPOffset, ShiftKind, StackSlot},
-    isa::reg::{writable, Reg},
+    // isa::reg::{writable, Reg},
     regalloc::RegAlloc,
     // stack::{Stack, TypedReg, Val},
+    stack::Stack,
 };
 
 /// The code generation context.
@@ -32,90 +33,90 @@ use crate::{
 pub(crate) struct CodeGenContext<'a, P: CodeGenPhase> {
     /// The register allocator.
     pub regalloc: RegAlloc,
-    // /// The value stack.
-    // pub stack: Stack,
-    // /// The current function's frame.
-    // pub frame: Frame<P>,
+    /// The value stack.
+    pub stack: Stack,
+    /// The current function's frame.
+    pub frame: Frame<P>,
     /// Reachability state.
     pub reachable: bool,
     // /// A reference to the VMOffsets.
     // pub vmoffsets: &'a VMOffsets<u8>,
 }
 
-// impl<'a> CodeGenContext<'a, Emission> {
-//     /// Prepares arguments for emitting an i32 shift operation.
-//     pub fn i32_shift<M>(&mut self, masm: &mut M, kind: ShiftKind) -> Result<()>
-//     where
-//         M: MacroAssembler,
-//     {
-//         let top = self
-//             .stack
-//             .peek()
-//             .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
+impl<'a> CodeGenContext<'a, Emission> {
+    ///// Prepares arguments for emitting an i32 shift operation.
+    // pub fn i32_shift<M>(&mut self, masm: &mut M, kind: ShiftKind) -> Result<()>
+    // where
+    //     M: MacroAssembler,
+    // {
+    //     let top = self
+    //         .stack
+    //         .peek()
+    //         .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
 
-//         if top.is_i32_const() {
-//             let val = self
-//                 .stack
-//                 .pop_i32_const()
-//                 .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
-//             let typed_reg = self.pop_to_reg(masm, None)?;
-//             masm.shift_ir(
-//                 writable!(typed_reg.reg),
-//                 val as u64,
-//                 typed_reg.reg,
-//                 kind,
-//                 OperandSize::S32,
-//             )?;
-//             self.stack.push(typed_reg.into());
-//         } else {
-//             masm.shift(self, kind, OperandSize::S32)?;
-//         }
-//         Ok(())
-//     }
+    //     if top.is_i32_const() {
+    //         let val = self
+    //             .stack
+    //             .pop_i32_const()
+    //             .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
+    //         let typed_reg = self.pop_to_reg(masm, None)?;
+    //         masm.shift_ir(
+    //             writable!(typed_reg.reg),
+    //             val as u64,
+    //             typed_reg.reg,
+    //             kind,
+    //             OperandSize::S32,
+    //         )?;
+    //         self.stack.push(typed_reg.into());
+    //     } else {
+    //         masm.shift(self, kind, OperandSize::S32)?;
+    //     }
+    //     Ok(())
+    // }
 
-//     /// Prepares arguments for emitting an i64 binary operation.
-//     pub fn i64_shift<M>(&mut self, masm: &mut M, kind: ShiftKind) -> Result<()>
-//     where
-//         M: MacroAssembler,
-//     {
-//         let top = self
-//             .stack
-//             .peek()
-//             .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
-//         if top.is_i64_const() {
-//             let val = self
-//                 .stack
-//                 .pop_i64_const()
-//                 .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
-//             let typed_reg = self.pop_to_reg(masm, None)?;
-//             masm.shift_ir(
-//                 writable!(typed_reg.reg),
-//                 val as u64,
-//                 typed_reg.reg,
-//                 kind,
-//                 OperandSize::S64,
-//             )?;
-//             self.stack.push(typed_reg.into());
-//         } else {
-//             masm.shift(self, kind, OperandSize::S64)?;
-//         };
+    // /// Prepares arguments for emitting an i64 binary operation.
+    // pub fn i64_shift<M>(&mut self, masm: &mut M, kind: ShiftKind) -> Result<()>
+    // where
+    //     M: MacroAssembler,
+    // {
+    //     let top = self
+    //         .stack
+    //         .peek()
+    //         .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
+    //     if top.is_i64_const() {
+    //         let val = self
+    //             .stack
+    //             .pop_i64_const()
+    //             .ok_or_else(|| CodeGenError::missing_values_in_stack())?;
+    //         let typed_reg = self.pop_to_reg(masm, None)?;
+    //         masm.shift_ir(
+    //             writable!(typed_reg.reg),
+    //             val as u64,
+    //             typed_reg.reg,
+    //             kind,
+    //             OperandSize::S64,
+    //         )?;
+    //         self.stack.push(typed_reg.into());
+    //     } else {
+    //         masm.shift(self, kind, OperandSize::S64)?;
+    //     };
 
-//         Ok(())
-//     }
-// }
+    //     Ok(())
+    // }
+}
 
 impl<'a> CodeGenContext<'a, Prologue> {
     /// Create a new code generation context.
     pub fn new(
         regalloc: RegAlloc,
-        // stack: Stack,
-        // frame: Frame<Prologue>,
+        stack: Stack,
+        frame: Frame<Prologue>,
         // vmoffsets: &'a VMOffsets<u8>,
     ) -> Self {
         Self {
             regalloc,
-            // stack,
-            // frame,
+            stack,
+            frame,
             reachable: true,
             // vmoffsets,
         }

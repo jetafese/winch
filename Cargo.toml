@@ -12,6 +12,7 @@ edition = "2021"
 anyhow = { version = "1.0.93", default-features = false }
 seahorn-stubs = {path = "src/seahorn-stubs"}
 libc-alloc = {path = "src/libc-alloc"}
+smallvec = { version = "1.10.0", default-features = false }
 
 [features]
 x64 = []
