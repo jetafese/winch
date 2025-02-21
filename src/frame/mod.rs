@@ -5,8 +5,8 @@ use crate::{
 };
 use anyhow::Result;
 use smallvec::SmallVec;
-use std::marker::PhantomData;
-use std::ops::Range;
+use core::marker::PhantomData;
+use core::ops::Range;
 use crate::wasmparser::{BinaryReader, FuncValidator, ValidatorResources};
 use crate::wasmtime_environ::{TypeConvert, WasmValType};
 

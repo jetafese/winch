@@ -42,7 +42,7 @@ impl RegAlloc {
                 spill(self)?;
                 self.regset
                     .reg_for_class(class)
-                    .ok_or_else(|| anyhow!(Error::new(("expected_register_to_be_available"))))
+                    .ok_or_else(|| anyhow!(Error::new("expected_register_to_be_available")))
             }
         }
     }
@@ -63,7 +63,7 @@ impl RegAlloc {
                 spill(self)?;
                 self.regset
                     .reg(named)
-                    .ok_or_else(|| anyhow!(Error::new(("expected_register_to_be_available"))))
+                    .ok_or_else(|| anyhow!(Error::new("expected_register_to_be_available")))
             }
         }
     }
