@@ -6,7 +6,7 @@ use crate::{
     // abi::{scratch, vmctx, ABIOperand, ABIResults, RetArea},
     // codegen::{CodeGenError, CodeGenPhase, Emission, Prologue},
     codegen::{CodeGenPhase, Emission, Prologue},
-    // frame::Frame,
+    frame::Frame,
     // isa::reg::RegClass,
     // masm::{MacroAssembler, OperandSize, RegImm, SPOffset, ShiftKind, StackSlot},
     // isa::reg::{writable, Reg},
