@@ -16,6 +16,7 @@ mod regset;
 mod codegen;
 mod stack;
 mod frame;
+mod abi;
 // mod visitor;
 /* stubbed libraries */
 mod cranelift_codegen;
@@ -30,6 +31,7 @@ use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32, nondet_u8};
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 use stack::Stack;
+use frame::Frame;
 
 // extern "C" {
 //     fn __VERIFIER_error() -> !;
@@ -60,13 +62,31 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 #[allow(unused)]
 #[no_mangle]
 pub extern fn main() {
-    let v: u32 = nondet_u32();
-    match v {
-        0 => checked_uadd(),
-        1 => sub_ir(),
-        3 => compile_function(),
-        _ => (),
-    }
+    // let v: u32 = nondet_u32();
+    // match v {
+    //     0 => checked_uadd(),
+    //     // 1 => sub_ir(),
+    //     2 => compile_function(),
+    //     _ => (),
+    // }
+    let stack = Stack::new();
+    let frame = Frame::new().unwrap();
+
+    let gpr = RegBitSet::int(
+        ALL_GPR.into(),
+        NON_ALLOCATABLE_GPR.into(),
+        usize::try_from(MAX_GPR).unwrap(),
+    );
+    let fpr = RegBitSet::float(
+        ALL_FPR.into(),
+        NON_ALLOCATABLE_FPR.into(),
+        usize::try_from(MAX_FPR).unwrap(),
+    );
+    let regalloc = regalloc::RegAlloc::from(gpr, fpr);
+    // let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
+    let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame);
+    // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
+    assert(true);
 }
 
 #[no_mangle]
@@ -95,47 +115,49 @@ fn sub_ir() {
     assert(true);
 }
 
-#[no_mangle]
-fn compile_function() {
-    // let pointer_bytes = self.pointer_bytes();
-    // let vmoffsets = VMOffsets::new(pointer_bytes, &translation.module);
+// #[no_mangle]
+// fn compile_function() {
+//     // let pointer_bytes = self.pointer_bytes();
+//     // let vmoffsets = VMOffsets::new(pointer_bytes, &translation.module);
 
-    // let mut body = body.get_binary_reader();
-    // let mut masm = X64Masm::new(
-    //     pointer_bytes,
-    //     self.shared_flags.clone(),
-    //     self.isa_flags.clone(),
-    // )?;
-    let stack = Stack::new();
+//     // let mut body = body.get_binary_reader();
+//     // let mut masm = X64Masm::new(
+//     //     pointer_bytes,
+//     //     self.shared_flags.clone(),
+//     //     self.isa_flags.clone(),
+//     // )?;
+//     let stack = Stack::new();
+//     // TODO: We need a function signature that can be used for initializing
+//     // the ABI
+//     // let abi_sig = wasm_sig::<abi::X64ABI>(sig);
 
-    // let abi_sig = wasm_sig::<abi::X64ABI>(sig);
+//     // let env = FuncEnv::new(
+//     //     &vmoffsets,
+//     //     translation,
+//     //     types,
+//     //     builtins,
+//     //     self,
+//     //     abi::X64ABI::ptr_type(),
+//     // );
+//     // let type_converter = TypeConverter::new(env.translation, env.types);
+//     // let defined_locals =
+//     //     DefinedLocals::new::<abi::X64ABI>(&type_converter, &mut body, validator)?;
+//     // let frame = Frame::new::<abi::X64ABI>(&abi_sig, &defined_locals)?;
+//     let frame = Frame::new()?;
 
-    // let env = FuncEnv::new(
-    //     &vmoffsets,
-    //     translation,
-    //     types,
-    //     builtins,
-    //     self,
-    //     abi::X64ABI::ptr_type(),
-    // );
-    // let type_converter = TypeConverter::new(env.translation, env.types);
-    // let defined_locals =
-    //     DefinedLocals::new::<abi::X64ABI>(&type_converter, &mut body, validator)?;
-    // let frame = Frame::new::<abi::X64ABI>(&abi_sig, &defined_locals)?;
-
-    let gpr = RegBitSet::int(
-        ALL_GPR.into(),
-        NON_ALLOCATABLE_GPR.into(),
-        usize::try_from(MAX_GPR).unwrap(),
-    );
-    let fpr = RegBitSet::float(
-        ALL_FPR.into(),
-        NON_ALLOCATABLE_FPR.into(),
-        usize::try_from(MAX_FPR).unwrap(),
-    );
-    let regalloc = regalloc::RegAlloc::from(gpr, fpr);
-    // let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
-    let codegen_context = codegen::CodeGenContext::new(regalloc, stack);
-    // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
-    assert(true);
-}
+//     let gpr = RegBitSet::int(
+//         ALL_GPR.into(),
+//         NON_ALLOCATABLE_GPR.into(),
+//         usize::try_from(MAX_GPR).unwrap(),
+//     );
+//     let fpr = RegBitSet::float(
+//         ALL_FPR.into(),
+//         NON_ALLOCATABLE_FPR.into(),
+//         usize::try_from(MAX_FPR).unwrap(),
+//     );
+//     let regalloc = regalloc::RegAlloc::from(gpr, fpr);
+//     // let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
+//     let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame);
+//     // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
+//     assert(true);
+// }
