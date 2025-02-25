@@ -46,4 +46,4 @@ RUN git reset --hard HEAD
 RUN RUSTFLAGS=--emit=llvm-ir cargo build --release
 
 WORKDIR /home/usea/winch/verify
-RUN make 
+# RUN make 
