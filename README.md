@@ -23,3 +23,9 @@ Once we have the desired llvm-ir (say `winch_codegen-2.ll`), we give it to SeaHo
 ## Expected Results 
 
 At the moment, we expect to get unsat since none of the functions have a path that leads to a panic. If you are interested in catching an intentionally planted panic, add one in the call path of the functions in our unit proof. For example, adding a panic in the initialization of the Machine Buffer will result in a panic detection in our unit proof.
+
+## Docker
+
+There is a docker setup that can be accessed in `verify`. It can be built and run with the commands `docker build -t winches . --file Dockerfile` and `docker run -it winch` respectively. 
+
+The `make` command can be used to run SeaHorn on the generated files. If you run into an issue where there are multiple files generated, specify the one you are interested in as follows: `make LLVM_FILE=../target/release/deps/winch_codegen{file-of-interest}.ll`.
