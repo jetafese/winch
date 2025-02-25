@@ -31,6 +31,9 @@
 #![no_std]
 #![no_main]
 
+#[link(name="c")]
+extern "C" {}
+
 pub mod isa;
 // pub use isa::*;
 mod masm;
