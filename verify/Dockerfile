@@ -41,10 +41,3 @@ RUN mkdir -p src && echo "fn main() {}" > src/main.rs
 RUN RUSTFLAGS=--emit=llvm-ir cargo build --release
 RUN rm -rf src
 RUN git reset --hard HEAD
-
-# Build the project (dependencies first)
-RUN cargo clean
-RUN RUSTFLAGS=--emit=llvm-ir cargo build --release
-
-WORKDIR /home/usea/winch/verify
-RUN make 
