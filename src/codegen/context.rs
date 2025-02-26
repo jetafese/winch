@@ -1,5 +1,5 @@
 // use anyhow::{bail, ensure, Result};
-// use crate::wasmtime_environ::{VMOffsets, WasmHeapType, WasmValType};
+use crate::wasmtime_environ::{VMOffsets, WasmHeapType, WasmValType};
 
 // use super::ControlStackFrame;
 use crate::{
@@ -40,7 +40,7 @@ pub(crate) struct CodeGenContext<'a, P: CodeGenPhase> {
     /// Reachability state.
     pub reachable: bool,
     // /// A reference to the VMOffsets.
-    // pub vmoffsets: &'a VMOffsets<u8>,
+    pub vmoffsets: &'a VMOffsets,
 }
 
 impl<'a> CodeGenContext<'a, Emission> {
@@ -111,14 +111,14 @@ impl<'a> CodeGenContext<'a, Prologue> {
         regalloc: RegAlloc,
         stack: Stack,
         frame: Frame<Prologue>,
-        // vmoffsets: &'a VMOffsets<u8>,
+        vmoffsets: &'a VMOffsets,
     ) -> Self {
         Self {
             regalloc,
             stack,
             frame,
             reachable: true,
-            // vmoffsets,
+            vmoffsets,
         }
     }
 

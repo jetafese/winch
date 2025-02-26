@@ -100,7 +100,7 @@ impl ABI for X64ABI {
                 heap_type: WasmHeapType::Func,
                 ..
             }) => regs::scratch(),
-            WasmValType::F32 | WasmValType::F64 | WasmValType::V128 => regs::scratch_xmm(),
+            WasmValType::V128 => regs::scratch_xmm(),
             _ => unimplemented!(),
         }
     }

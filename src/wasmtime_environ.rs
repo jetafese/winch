@@ -396,40 +396,47 @@ define_tunables! {
 /// This class computes offsets to fields within `VMContext` and other
 /// related structs that JIT code accesses directly.
 #[derive(Debug, Clone, Copy)]
-pub struct VMOffsets<P> {
-    /// The size in bytes of a pointer on the target.
-    pub ptr: P,
-    /// The number of imported functions in the module.
-    pub num_imported_functions: u32,
-    /// The number of imported tables in the module.
-    pub num_imported_tables: u32,
-    /// The number of imported memories in the module.
-    pub num_imported_memories: u32,
-    /// The number of imported globals in the module.
-    pub num_imported_globals: u32,
-    /// The number of defined tables in the module.
-    pub num_defined_tables: u32,
-    /// The number of defined memories in the module.
-    pub num_defined_memories: u32,
-    /// The number of memories owned by the module instance.
-    pub num_owned_memories: u32,
-    /// The number of defined globals in the module.
-    pub num_defined_globals: u32,
-    /// The number of escaped functions in the module, the size of the func_refs
-    /// array.
-    pub num_escaped_funcs: u32,
+pub struct VMOffsets {
+    // /// The size in bytes of a pointer on the target.
+    // pub ptr: P,
+    // /// The number of imported functions in the module.
+    // pub num_imported_functions: u32,
+    // /// The number of imported tables in the module.
+    // pub num_imported_tables: u32,
+    // /// The number of imported memories in the module.
+    // pub num_imported_memories: u32,
+    // /// The number of imported globals in the module.
+    // pub num_imported_globals: u32,
+    // /// The number of defined tables in the module.
+    // pub num_defined_tables: u32,
+    // /// The number of defined memories in the module.
+    // pub num_defined_memories: u32,
+    // /// The number of memories owned by the module instance.
+    // pub num_owned_memories: u32,
+    // /// The number of defined globals in the module.
+    // pub num_defined_globals: u32,
+    // /// The number of escaped functions in the module, the size of the func_refs
+    // /// array.
+    // pub num_escaped_funcs: u32,
 
-    // precalculated offsets of various member fields
-    imported_functions: u32,
-    imported_tables: u32,
-    imported_memories: u32,
-    imported_globals: u32,
-    defined_tables: u32,
-    defined_memories: u32,
-    owned_memories: u32,
-    defined_globals: u32,
-    defined_func_refs: u32,
-    size: u32,
+    // // precalculated offsets of various member fields
+    // imported_functions: u32,
+    // imported_tables: u32,
+    // imported_memories: u32,
+    // imported_globals: u32,
+    // defined_tables: u32,
+    // defined_memories: u32,
+    // owned_memories: u32,
+    // defined_globals: u32,
+    // defined_func_refs: u32,
+    // size: u32,
+}
+
+impl VMOffsets {
+    /// Return a new `VMOffsets` instance, for a given pointer size.
+    pub fn new() -> Self {
+        Self {  }
+    }
 }
 
 /// Align an offset used in this module to a specific byte-width by rounding up
