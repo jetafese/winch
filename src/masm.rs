@@ -1,3 +1,7 @@
+use anyhow::Result;
+
+use crate::{cranelift_codegen::ir::TrapCode, reg::{Reg, WritableReg}};
+
 #[derive(Copy, Debug, Clone, Eq, PartialEq)]
 pub enum OperandSize {
     /// 8 bits.
@@ -416,31 +420,31 @@ impl StackSlot {
 //     }
 // }
 
-// /// An abstraction over a register or immediate.
-// #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-// pub(crate) enum RegImm {
-//     /// A register.
-//     Reg(Reg),
-//     /// A tagged immediate argument.
-//     Imm(Imm),
-// }
+/// An abstraction over a register or immediate.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum RegImm {
+    /// A register.
+    Reg(Reg),
+    /// A tagged immediate argument.
+    Imm(Imm),
+}
 
-// /// An tagged representation of an immediate.
-// #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-// pub(crate) enum Imm {
-//     /// I32 immediate.
-//     I32(u32),
-//     /// I64 immediate.
-//     I64(u64),
-//     /// F32 immediate.
-//     F32(u32),
-//     /// F64 immediate.
-//     F64(u64),
-//     /// V128 immediate.
-//     V128(i128),
-// }
+/// An tagged representation of an immediate.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum Imm {
+    /// I32 immediate.
+    I32(u32),
+    /// I64 immediate.
+    I64(u64),
+    // /// F32 immediate.
+    // F32(u32),
+    // /// F64 immediate.
+    // F64(u64),
+    /// V128 immediate.
+    V128(i128),
+}
 
-// impl Imm {
+impl Imm {
 //     /// Create a new I64 immediate.
 //     pub fn i64(val: i64) -> Self {
 //         Self::I64(val as u64)
@@ -466,14 +470,14 @@ impl StackSlot {
 //         Self::V128(bits)
 //     }
 
-//     /// Convert the immediate to i32, if possible.
-//     pub fn to_i32(&self) -> Option<i32> {
-//         match self {
-//             Self::I32(v) => Some(*v as i32),
-//             Self::I64(v) => i32::try_from(*v as i64).ok(),
-//             _ => None,
-//         }
-//     }
+    /// Convert the immediate to i32, if possible.
+    pub fn to_i32(&self) -> Option<i32> {
+        match self {
+            Self::I32(v) => Some(*v as i32),
+            Self::I64(v) => i32::try_from(*v as i64).ok(),
+            _ => None,
+        }
+    }
 
 //     /// Returns true if the [`Imm`] is float.
 //     pub fn is_float(&self) -> bool {
@@ -491,7 +495,7 @@ impl StackSlot {
 //             Self::V128(_) => OperandSize::S128,
 //         }
 //     }
-// }
+}
 
 // /// The location of the [VMcontext] used for function calls.
 // #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -859,19 +863,19 @@ pub(crate) trait MacroAssembler {
 //         Ok(())
 //     }
 
-//     /// Perform add operation.
-//     fn add(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
+    /// Perform add operation.
+    fn add(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
 
-//     /// Perform a checked unsigned integer addition, emitting the provided trap
-//     /// if the addition overflows.
-//     fn checked_uadd(
-//         &mut self,
-//         dst: WritableReg,
-//         lhs: Reg,
-//         rhs: RegImm,
-//         size: OperandSize,
-//         trap: TrapCode,
-//     ) -> Result<()>;
+    /// Perform a checked unsigned integer addition, emitting the provided trap
+    /// if the addition overflows.
+    fn checked_uadd(
+        &mut self,
+        dst: WritableReg,
+        lhs: Reg,
+        rhs: RegImm,
+        size: OperandSize,
+        trap: TrapCode,
+    ) -> Result<()>;
 
 //     /// Perform subtraction operation.
 //     fn sub(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;

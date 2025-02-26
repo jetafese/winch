@@ -403,7 +403,9 @@ pub mod isa {
     pub mod x64 {
         // use crate::{cranelift_codegen::{settings, Reg}, isa::reg::WritableReg};
 
-        use crate::cranelift_codegen::settings;
+        use args::CC;
+
+        use crate::{cranelift_codegen::{ir::TrapCode, settings}, masm::OperandSize};
 
         pub mod args {
             use crate::cranelift_codegen::{ir::MemFlags, Reg, RegClass, Writable, MachLabel};
@@ -887,17 +889,70 @@ pub mod isa {
                 |reg| reg.class() == RegClass::Float
             );
 
+            #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+            #[repr(u8)]
+            pub enum CC {
+                ///  overflow
+                O = 0,
+                /// no overflow
+                NO = 1,
+            
+                /// < unsigned
+                B = 2,
+                /// >= unsigned
+                NB = 3,
+            
+                /// zero
+                Z = 4,
+                /// not-zero
+                NZ = 5,
+            
+                /// <= unsigned
+                BE = 6,
+                /// > unsigned
+                NBE = 7,
+            
+                /// negative
+                S = 8,
+                /// not-negative
+                NS = 9,
+            
+                /// < signed
+                L = 12,
+                /// >= signed
+                NL = 13,
+            
+                /// <= signed
+                LE = 14,
+                /// > signed
+                NLE = 15,
+            
+                /// parity
+                P = 10,
+            
+                /// not parity
+                NP = 11,
+            }
         }
         #[derive(Clone, Debug)]
         pub enum Inst {
             Nop0,
             Nop4,
             AluRmiR {
-                size: crate::masm::OperandSize,
+                size: OperandSize,
                 op: args::AluRmiROpcode,
                 src1: args::Gpr,
                 src2: args::GprMemImm,
                 dst: args::WritableGpr,
+            },
+            Imm {
+                dst_size: OperandSize,
+                simm64: u64,
+                dst: args::WritableGpr,
+            },
+            TrapIf {
+                cc: CC,
+                trap_code: TrapCode,
             },
         }
         pub mod x64_settings {

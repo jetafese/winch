@@ -1,5 +1,7 @@
 //! Assembler library implementation for x64.
 
+use crate::cranelift_codegen::ir::TrapCode;
+use crate::cranelift_codegen::isa::x64::args::CC;
 use crate::{
     // isa::{reg::Reg, CallingConvention},
     isa::reg::Reg,
@@ -346,14 +348,14 @@ impl Assembler {
     //     });
     // }
 
-    // /// Immediate-to-register move.
-    // pub fn mov_ir(&mut self, imm: u64, dst: WritableReg, size: OperandSize) {
-    //     self.emit(Inst::Imm {
-    //         dst_size: size.into(),
-    //         simm64: imm,
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+    /// Immediate-to-register move.
+    pub fn mov_ir(&mut self, imm: u64, dst: WritableReg, size: OperandSize) {
+        self.emit(Inst::Imm {
+            dst_size: size.into(),
+            simm64: imm,
+            dst: dst.map(Into::into),
+        });
+    }
 
     // /// Zero-extend memory-to-register load.
     // pub fn movzx_mr(
@@ -986,18 +988,18 @@ impl Assembler {
     //     });
     // }
 
-    // /// Add immediate and register.
-    // pub fn add_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
-    //     let imm = RegMemImm::imm(imm as u32);
+    /// Add immediate and register.
+    pub fn add_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
+        let imm = RegMemImm::imm(imm as u32);
 
-    //     self.emit(Inst::AluRmiR {
-    //         size: size.into(),
-    //         op: AluRmiROpcode::Add,
-    //         src1: dst.to_reg().into(),
-    //         src2: GprMemImm::unwrap_new(imm),
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+        self.emit(Inst::AluRmiR {
+            size: size.into(),
+            op: AluRmiROpcode::Add,
+            src1: dst.to_reg().into(),
+            src2: GprMemImm::unwrap_new(imm),
+            dst: dst.map(Into::into),
+        });
+    }
 
     /// Add register and register.
     pub fn add_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
@@ -1358,13 +1360,13 @@ impl Assembler {
     //     self.emit(Inst::Ud2 { trap_code: code })
     // }
 
-    // /// Conditional trap.
-    // pub fn trapif(&mut self, cc: impl Into<CC>, trap_code: TrapCode) {
-    //     self.emit(Inst::TrapIf {
-    //         cc: cc.into(),
-    //         trap_code,
-    //     });
-    // }
+    /// Conditional trap.
+    pub fn trapif(&mut self, cc: impl Into<CC>, trap_code: TrapCode) {
+        self.emit(Inst::TrapIf {
+            cc: cc.into(),
+            trap_code,
+        });
+    }
 
     // /// Load effective address.
     // pub fn lea(&mut self, addr: &Address, dst: WritableReg, size: OperandSize) {
