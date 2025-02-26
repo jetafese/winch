@@ -94,45 +94,24 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 #[allow(unused)]
 #[no_mangle]
 pub extern fn main() {
-    // let v: u32 = nondet_u32();
-    // match v {
-    //     0 => checked_uadd(),
-    //     // 1 => sub_ir(),
-    //     2 => compile_function(),
-    //     _ => (),
-    // }
-    let stack = Stack::new();
-    let frame = Frame::new().unwrap();
-
-    let gpr = RegBitSet::int(
-        ALL_GPR.into(),
-        NON_ALLOCATABLE_GPR.into(),
-        usize::try_from(MAX_GPR).unwrap(),
-    );
-    let fpr = RegBitSet::float(
-        ALL_FPR.into(),
-        NON_ALLOCATABLE_FPR.into(),
-        usize::try_from(MAX_FPR).unwrap(),
-    );
-    let regalloc = regalloc::RegAlloc::from(gpr, fpr);
-    // let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
-    let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame);
-    // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
-    assert(true);
+    let v: u32 = nondet_u32();
+    match v {
+        0 => masm_new(),
+        1 => sub_ir(),
+        2 => compile_function(),
+        _ => (),
+    }
 }
 
 #[no_mangle]
-fn checked_uadd() {
+fn masm_new() {
     assume(true);
     let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
     let shared_flags = cranelift_codegen::settings::Flags::new();
     let ptr_size = nondet_u8();
+    // invariant: ptr_size has to be equal to 8 so that the next line doesn't panic
+    assume(ptr_size == 8);
     let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    masm_64.err();
-    // let mut asm = isa::x64::asm::Assembler::new(shared_flags, isa_flags);
-    // let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
-    // let dst = isa::x64::regs::scratch();
-    // asm.add_rr(src, Writable::from_reg(dst),masm::OperandSize::S32);
     assert(true);
 }
 

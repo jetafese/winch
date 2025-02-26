@@ -135,10 +135,10 @@ pub enum WasmValType {
     I32,
     /// I64 type
     I64,
-    /// F32 type
-    F32,
-    /// F64 type
-    F64,
+    // /// F32 type
+    // F32,
+    // /// F64 type
+    // F64,
     /// V128 type
     V128,
     /// Reference type
