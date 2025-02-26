@@ -289,7 +289,7 @@ impl Stack {
         if self.len() >= n {
             Ok(self.len() - n)
         } else {
-            Err(anyhow!(Error::new("missing_values_in_stack")))
+            Err(anyhow!(Error::msg("missing_values_in_stack")))
         }
     }
 
