@@ -1391,8 +1391,8 @@ impl TryFrom<WasmValType> for OperandSize {
     type Error = anyhow::Error;
     fn try_from(ty: WasmValType) -> Result<OperandSize> {
         let ty = match ty {
-            WasmValType::I32 | WasmValType::F32 => OperandSize::S32,
-            WasmValType::I64 | WasmValType::F64 => OperandSize::S64,
+            WasmValType::I32 => OperandSize::S32,
+            WasmValType::I64 => OperandSize::S64,
             WasmValType::V128 => OperandSize::S128,
             WasmValType::Ref(rt) => {
                 match rt.heap_type {
