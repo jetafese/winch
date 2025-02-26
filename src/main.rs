@@ -106,14 +106,12 @@ pub extern fn main() {
 
 #[no_mangle]
 fn masm_new() {
-    assume(true);
     let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
     let shared_flags = cranelift_codegen::settings::Flags::new();
     let ptr_size = nondet_u8();
     // invariant: ptr_size has to be equal to 8 so that the next line doesn't panic
     assume(ptr_size == 8);
     let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    assert(true);
 }
 
 #[no_mangle]
@@ -124,7 +122,6 @@ fn sub_ir() {
     let src = nondet_i32();
     let dst = isa::x64::regs::scratch();
     asm.sub_ir(src, Writable::from_reg(dst),masm::OperandSize::S32);
-    assert(true);
 }
 
 #[no_mangle]
@@ -172,5 +169,4 @@ fn compile_function() {
     let codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
     assert(codegen_context.reachable);
     // let codegen = CodeGen::new(tunables, &mut masm, codegen_context, env, abi_sig);
-    assert(true);
 }
