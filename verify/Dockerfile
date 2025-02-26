@@ -32,12 +32,12 @@ rustup component add rustfmt clippy
 
 RUN git clone https://github.com/jetafese/winch/
 WORKDIR /home/usea/winch/
-RUN git checkout asm
+RUN git checkout codegen
 # try to cache some of the work cargo does:
 RUN sh -c 'find . -mindepth 1 ! -name "Cargo.toml" ! -name "Cargo.lock" ! -path "./.git*" -exec rm -rf {} +'
 RUN mkdir -p src && echo "fn main() {}" > src/main.rs
 RUN sed -i '/seahorn/d' Cargo.toml
-RUN mkdir -p src && echo "fn main() {}" > src/main.rs
+RUN sed -i '/libc/d' Cargo.toml
 RUN RUSTFLAGS=--emit=llvm-ir cargo build --release
 RUN rm -rf src
 RUN git reset --hard HEAD
