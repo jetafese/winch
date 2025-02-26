@@ -7,7 +7,7 @@ use crate::wasmtime_environ::WasmValType;
 
 /// A typed register value used to track register values in the value
 /// stack.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct TypedReg {
     /// The physical register.
     pub reg: Reg,
@@ -37,21 +37,21 @@ impl TypedReg {
         }
     }
 
-    /// Create an f64 [`TypedReg`].
-    pub fn f64(reg: Reg) -> Self {
-        Self {
-            ty: WasmValType::F64,
-            reg,
-        }
-    }
+    // /// Create an f64 [`TypedReg`].
+    // pub fn f64(reg: Reg) -> Self {
+    //     Self {
+    //         ty: WasmValType::F64,
+    //         reg,
+    //     }
+    // }
 
-    /// Create an f32 [`TypedReg`].
-    pub fn f32(reg: Reg) -> Self {
-        Self {
-            ty: WasmValType::F32,
-            reg,
-        }
-    }
+    // /// Create an f32 [`TypedReg`].
+    // pub fn f32(reg: Reg) -> Self {
+    //     Self {
+    //         ty: WasmValType::F32,
+    //         reg,
+    //     }
+    // }
 }
 
 impl From<TypedReg> for Reg {
@@ -79,7 +79,7 @@ pub struct Memory {
 }
 
 /// Value definition to be used within the shadow stack.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub(crate) enum Val {
     /// I32 Constant.
     I32(i32),
@@ -117,12 +117,12 @@ impl From<Memory> for Val {
     }
 }
 
-impl TryFrom<u32> for Val {
-    type Error = anyhow::Error;
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        i32::try_from(value).map(Val::i32).map_err(Into::into)
-    }
-}
+// impl TryFrom<u32> for Val {
+//     type Error = anyhow::Error;
+//     fn try_from(value: u32) -> Result<Self, Self::Error> {
+//         i32::try_from(value).map(Val::i32).map_err(Into::into)
+//     }
+// }
 
 impl Val {
     /// Create a new I32 constant value.
@@ -183,7 +183,8 @@ impl Val {
     /// Check whether the value is a constant.
     pub fn is_const(&self) -> bool {
         match *self {
-            Val::I32(_) | Val::I64(_) | Val::F32(_) | Val::F64(_) | Val::V128(_) => true,
+            // Val::I32(_) | Val::I64(_) | Val::F32(_) | Val::F64(_) | Val::V128(_) => true,
+            Val::I32(_) | Val::I64(_) | Val::V128(_) => true,
             _ => false,
         }
     }
@@ -258,8 +259,8 @@ impl Val {
         match self {
             Val::I32(_) => WasmValType::I32,
             Val::I64(_) => WasmValType::I64,
-            Val::F32(_) => WasmValType::F32,
-            Val::F64(_) => WasmValType::F64,
+            // Val::F32(_) => WasmValType::F32,
+            // Val::F64(_) => WasmValType::F64,
             Val::V128(_) => WasmValType::V128,
             Val::Reg(r) => r.ty,
             Val::Memory(m) => m.ty,
