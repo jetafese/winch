@@ -1,31 +1,4 @@
-//! Code generation library for Winch.
-
-// #![expect(clippy::allow_attributes_without_reason, reason = "crate not migrated")]
-
-// Unless this library is compiled with `all-arch`, the rust compiler
-// is going to emit dead code warnings. This directive is fine as long
-// as we configure to run CI at least once with the `all-arch` feature
-// enabled.
-// #![cfg_attr(not(feature = "all-arch"), allow(dead_code))]
-
-// // mod abi;
-// // pub use codegen::{BuiltinFunctions, FuncEnv};
-// // mod codegen;
-// // mod frame;
-// pub mod isa;
-// // pub use isa::*;
-// mod masm;
-// mod regalloc;
-// // mod regset;
-// // mod stack;
-// // mod visitor;
-// /* stubbed libraries */
-// mod cranelift_codegen;
-// // mod wasmtime_environ;
-// mod regalloc2;
-// // mod wasmparser;
-// // mod wasmtime_cranelift;
-// // mod target_lexicon;
+//! Unit proof collection for Winch.
 
 #![no_builtins]
 #![no_std]
@@ -67,12 +40,6 @@ use stack::Stack;
 use frame::Frame;
 use wasmtime_environ::VMOffsets;
 
-// extern "C" {
-//     fn __VERIFIER_error() -> !;
-// //     fn __VERIFIER_assume(pred: i32);
-// //     fn __VERIFIER_nondet_u32() -> u32;
-// }
-
 use core::panic::PanicInfo;
 
 #[panic_handler]
@@ -80,18 +47,6 @@ use core::panic::PanicInfo;
 fn panic(_panic: &PanicInfo<'_>) -> ! {
     error();
 }
-
-// fn nondet_u32() -> u32 {
-//     unsafe {
-//         __VERIFIER_nondet_u32()
-//     }
-// }
-
-// fn error() -> ! {
-//     unsafe {
-//         __VERIFIER_error()
-//     }
-// }
 
 #[allow(unused)]
 #[no_mangle]
@@ -126,16 +81,6 @@ fn checked_uadd() {
     let dst_val = nondet_i32();
     let dst = RegImm::Imm(masm::Imm::I64(dst_val as u64));
     masm_64.unwrap().checked_uadd(Writable::from_reg(src), src, dst, masm::OperandSize::S32, TrapCode::INTEGER_OVERFLOW);
-}
-
-#[no_mangle]
-fn sub_ir() {
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let mut asm = isa::x64::asm::Assembler::new(shared_flags, isa_flags);
-    let src = nondet_i32();
-    let dst = isa::x64::regs::scratch();
-    asm.sub_ir(src, Writable::from_reg(dst),masm::OperandSize::S32);
 }
 
 #[no_mangle]
