@@ -34,7 +34,7 @@ use masm::{MacroAssembler, RegImm};
 use isa::reg::{self, Reg};
 use regalloc2::PReg;
 use regset::RegBitSet;
-use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32, nondet_u8};
+use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_i64, nondet_u32, nondet_u8};
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 use stack::{Stack, Val};
 use frame::Frame;
@@ -72,6 +72,7 @@ fn visitors() {
     let v = nondet_u8();
     match v {
         0 => visit_i32_const(),
+        1 => visit_i64_const(),
         _ => (),
     }
 }
@@ -118,4 +119,26 @@ fn visit_i32_const() {
     let mut codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
     let val = nondet_i32();
     codegen_context.stack.push(Val::i32(val));
+}
+
+#[no_mangle]
+fn visit_i64_const() {
+    let vmoffsets = VMOffsets::new();
+    let stack = Stack::new();
+    let frame = Frame::new().unwrap();
+
+    let gpr = RegBitSet::int(
+        ALL_GPR.into(),
+        NON_ALLOCATABLE_GPR.into(),
+        usize::try_from(MAX_GPR).unwrap(),
+    );
+    let fpr = RegBitSet::float(
+        ALL_FPR.into(),
+        NON_ALLOCATABLE_FPR.into(),
+        usize::try_from(MAX_FPR).unwrap(),
+    );
+    let regalloc = regalloc::RegAlloc::from(gpr, fpr);
+    let mut codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
+    let val = nondet_i64();
+    codegen_context.stack.push(Val::i64(val));
 }
