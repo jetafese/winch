@@ -56,9 +56,10 @@ mod wasmtime_environ;
 mod regalloc2;
 mod target_lexicon;
 
-use cranelift_codegen::Writable;
-// use isa::reg::{self, Reg};
-// use regalloc2::PReg;
+use cranelift_codegen::{ir::TrapCode, Writable};
+use masm::{MacroAssembler, RegImm};
+use isa::reg::{self, Reg};
+use regalloc2::PReg;
 use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_u32, nondet_u8};
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
@@ -100,6 +101,7 @@ pub extern fn main() {
         0 => masm_new(),
         1 => sub_ir(),
         2 => compile_function(),
+        3 => checked_uadd(),
         _ => (),
     }
 }
@@ -112,6 +114,18 @@ fn masm_new() {
     // invariant: ptr_size has to be equal to 8 so that the next line doesn't panic
     assume(ptr_size == 8);
     let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+}
+
+#[no_mangle]
+fn checked_uadd() {
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    let dst_val = nondet_i32();
+    let dst = RegImm::Imm(masm::Imm::I64(dst_val as u64));
+    masm_64.unwrap().checked_uadd(Writable::from_reg(src), src, dst, masm::OperandSize::S32, TrapCode::INTEGER_OVERFLOW);
 }
 
 #[no_mangle]

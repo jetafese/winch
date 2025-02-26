@@ -1,20 +1,21 @@
-use anyhow::Result;
+use anyhow::{Error, Result};
 
 use super::{
     // abi::X64ABI,
     // address::Address,
-    asm::{Assembler},
+    asm::Assembler, regs,
     // asm::{Assembler, PatchableAddToReg},
     // regs::{self, rbp, rsp},
 };
 // use anyhow::{anyhow, bail, Result};
 
+use crate::cranelift_codegen::isa::x64::args::CC;
 use crate::masm::{
-    // DivKind, ExtendKind, FloatCmpKind, Imm as I, IntCmpKind, 
+    // DivKind, ExtendKind, FloatCmpKind, IntCmpKind, 
     MacroAssembler as Masm, 
     // MulWideKind,
-    OperandSize, 
-    // RegImm, RemKind, RoundingMode, ShiftKind, TrapCode, TruncKind, TRUSTED_FLAGS,
+    OperandSize, RegImm, Imm as I,
+    // RemKind, RoundingMode, ShiftKind, TruncKind, TRUSTED_FLAGS,
     // UNTRUSTED_FLAGS,
 };
 
@@ -27,13 +28,14 @@ use crate::masm::{
 //     abi::{vmctx, ABI},
 //     masm::{SPOffset, StackSlot},
 // };
-// use crate::{
-//     isa::{
-//         reg::{writable, Reg, RegClass, WritableReg},
-//         CallingConvention,
-//     },
-//     masm::CalleeKind,
-// };
+use crate::{
+    // isa::{
+    //     reg::{writable, Reg, RegClass, WritableReg},
+    //     CallingConvention,
+    // },
+    // masm::CalleeKind,
+    isa::reg::{Reg, WritableReg, writable},
+};
 use crate::cranelift_codegen::{
     // binemit::CodeOffset,
     // ir::{MemFlags, RelSourceLoc, SourceLoc},
@@ -42,7 +44,8 @@ use crate::cranelift_codegen::{
         // args::{ExtMode, CC},
         x64_settings,
     },
-    settings, 
+    settings,
+    ir::TrapCode,
     // Final, MachBufferFinalized, MachLabel,
 };
 // use wasmtime_cranelift::TRAP_UNREACHABLE;
@@ -361,39 +364,39 @@ impl Masm for MacroAssembler {
 //         }
 //     }
 
-//     fn add(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()> {
-//         Self::ensure_two_argument_form(&dst.to_reg(), &lhs)?;
-//         match (rhs, dst) {
-//             (RegImm::Imm(imm), _) => {
-//                 if let Some(v) = imm.to_i32() {
-//                     self.asm.add_ir(v, dst, size);
-//                 } else {
-//                     let scratch = regs::scratch();
-//                     self.load_constant(&imm, writable!(scratch), size)?;
-//                     self.asm.add_rr(scratch, dst, size);
-//                 }
-//             }
+    fn add(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()> {
+        Self::ensure_two_argument_form(&dst.to_reg(), &lhs)?;
+        match (rhs, dst) {
+            (RegImm::Imm(imm), _) => {
+                if let Some(v) = imm.to_i32() {
+                    self.asm.add_ir(v, dst, size);
+                } else {
+                    let scratch = regs::scratch();
+                    self.load_constant(&imm, writable!(scratch), size)?;
+                    self.asm.add_rr(scratch, dst, size);
+                }
+            }
 
-//             (RegImm::Reg(src), dst) => {
-//                 self.asm.add_rr(src, dst, size);
-//             }
-//         }
+            (RegImm::Reg(src), dst) => {
+                self.asm.add_rr(src, dst, size);
+            }
+        }
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-//     fn checked_uadd(
-//         &mut self,
-//         dst: WritableReg,
-//         lhs: Reg,
-//         rhs: RegImm,
-//         size: OperandSize,
-//         trap: TrapCode,
-//     ) -> Result<()> {
-//         self.add(dst, lhs, rhs, size)?;
-//         self.asm.trapif(CC::B, trap);
-//         Ok(())
-//     }
+    fn checked_uadd(
+        &mut self,
+        dst: WritableReg,
+        lhs: Reg,
+        rhs: RegImm,
+        size: OperandSize,
+        trap: TrapCode,
+    ) -> Result<()> {
+        self.add(dst, lhs, rhs, size)?;
+        self.asm.trapif(CC::B, trap);
+        Ok(())
+    }
 
 //     fn sub(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()> {
 //         Self::ensure_two_argument_form(&dst.to_reg(), &lhs)?;
@@ -1277,13 +1280,13 @@ impl MacroAssembler {
 //         self.sp_offset -= bytes;
 //     }
 
-//     fn load_constant(&mut self, constant: &I, dst: WritableReg, size: OperandSize) -> Result<()> {
-//         match constant {
-//             I::I32(v) => Ok(self.asm.mov_ir(*v as u64, dst, size)),
-//             I::I64(v) => Ok(self.asm.mov_ir(*v, dst, size)),
-//             _ => Err(anyhow!(CodeGenError::unsupported_imm())),
-//         }
-//     }
+    fn load_constant(&mut self, constant: &I, dst: WritableReg, size: OperandSize) -> Result<()> {
+        match constant {
+            I::I32(v) => Ok(self.asm.mov_ir(*v as u64, dst, size)),
+            I::I64(v) => Ok(self.asm.mov_ir(*v, dst, size)),
+            _ => Err(Error::msg("unsupported_imm")),
+        }
+    }
 
 //     /// A common implementation for zero-extend stack loads.
 //     fn load_impl<M>(
@@ -1378,13 +1381,13 @@ impl MacroAssembler {
 //         Ok(())
 //     }
 
-//     fn ensure_two_argument_form(dst: &Reg, lhs: &Reg) -> Result<()> {
-//         if dst != lhs {
-//             Err(anyhow!(CodeGenError::invalid_two_arg_form()))
-//         } else {
-//             Ok(())
-//         }
-//     }
+    fn ensure_two_argument_form(dst: &Reg, lhs: &Reg) -> Result<()> {
+        if dst != lhs {
+            Err(Error::msg("invalid_two_arg_form"))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl TryFrom<WasmValType> for OperandSize {
