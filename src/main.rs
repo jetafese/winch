@@ -170,5 +170,26 @@ fn visit_i32_add() {
         Ok(TypedReg::i32(dst))
     });
     assert(res.is_ok());
-    // assert!(res.is_ok());
+}
+
+#[no_mangle]
+fn visit_i64_add() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let mut codegen_context = setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let mut masm = masm_64.unwrap();
+    // SUT
+    // invariant: top value on stack can be const/reg
+    let val = nondet_i64();
+    emission_context.stack.push(Val::I64(val));
+    let res = emission_context.i64_binop(&mut masm, |masm, dst, src, size| {
+        masm.add(writable!(dst), dst, src, size)?;
+        Ok(TypedReg::i64(dst))
+    });
+    assert(res.is_ok());
 }
