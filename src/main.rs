@@ -101,6 +101,7 @@ fn checked_uadd() {
 
 #[no_mangle]
 fn visit_i32_const() {
+    // setup context
     let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
     let frame = Frame::new().unwrap();
@@ -118,11 +119,13 @@ fn visit_i32_const() {
     let regalloc = regalloc::RegAlloc::from(gpr, fpr);
     let mut codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
     let val = nondet_i32();
+    // SUT
     codegen_context.stack.push(Val::i32(val));
 }
 
 #[no_mangle]
 fn visit_i64_const() {
+    // setup context
     let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
     let frame = Frame::new().unwrap();
@@ -140,5 +143,6 @@ fn visit_i64_const() {
     let regalloc = regalloc::RegAlloc::from(gpr, fpr);
     let mut codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
     let val = nondet_i64();
+    // SUT
     codegen_context.stack.push(Val::i64(val));
 }
