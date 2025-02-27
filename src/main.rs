@@ -94,10 +94,12 @@ fn checked_uadd() {
     let shared_flags = cranelift_codegen::settings::Flags::new();
     let ptr_size = 8;
     let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let mut masm = masm_64.unwrap();
     let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
     let dst_val = nondet_i32();
     let dst = RegImm::Imm(masm::Imm::I64(dst_val as u64));
-    masm_64.unwrap().checked_uadd(Writable::from_reg(src), src, dst, masm::OperandSize::S32, TrapCode::INTEGER_OVERFLOW);
+    let res = masm.checked_uadd(Writable::from_reg(src), src, dst, masm::OperandSize::S32, TrapCode::INTEGER_OVERFLOW);
+    assert(res.is_ok());
 }
 
 #[no_mangle]
