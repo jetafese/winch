@@ -17,6 +17,17 @@ pub enum OperandSize {
 }
 
 impl OperandSize {
+    /// The number of bits in the operand.
+    pub fn num_bits(&self) -> u8 {
+        match self {
+            OperandSize::S8 => 8,
+            OperandSize::S16 => 16,
+            OperandSize::S32 => 32,
+            OperandSize::S64 => 64,
+            OperandSize::S128 => 128,
+        }
+    }
+
     /// The number of bytes in the operand.
     pub fn bytes(&self) -> u32 {
         match self {
@@ -145,6 +156,7 @@ pub enum RoundingMode {
 
 
 // use crate::abi::{self, align_to, scratch, LocalSlot};
+use crate::abi::LocalSlot;
 // use crate::codegen::{CodeGenContext, Emission, FuncEnv};
 // use crate::isa::{
 //     reg::{writable, Reg, WritableReg},
@@ -700,15 +712,15 @@ pub const TRUSTED_FLAGS: MemFlags = MemFlags::trusted();
 // /// where needed, in the case of architectures that use a two-argument form.
 
 pub(crate) trait MacroAssembler {
-//     /// The addressing mode.
-//     type Address: Copy + Debug;
+    /// The addressing mode.
+    type Address: Copy + core::fmt::Debug;
 
 //     /// The pointer representation of the target ISA,
 //     /// used to access information from [`VMOffsets`].
 //     type Ptr: PtrSize;
 
-//     /// The ABI details of the target.
-//     type ABI: abi::ABI;
+    /// The ABI details of the target.
+    type ABI: crate::abi::ABI;
 
 //     /// Emit the function prologue.
 //     fn prologue(&mut self, vmctx: Reg) -> Result<()> {
@@ -733,8 +745,8 @@ pub(crate) trait MacroAssembler {
     /// Reserve stack space.
     fn reserve_stack(&mut self, bytes: u32) -> Result<()>;
 
-//     /// Free stack space.
-//     fn free_stack(&mut self, bytes: u32) -> Result<()>;
+    /// Free stack space.
+    fn free_stack(&mut self, bytes: u32) -> Result<()>;
 
 //     /// Reset the stack pointer to the given offset;
 //     ///
@@ -742,13 +754,13 @@ pub(crate) trait MacroAssembler {
 //     /// when dealing with unreachable code.
 //     fn reset_stack_pointer(&mut self, offset: SPOffset) -> Result<()>;
 
-//     /// Get the address of a local slot.
-//     fn local_address(&mut self, local: &LocalSlot) -> Result<Self::Address>;
+    /// Get the address of a local slot.
+    fn local_address(&mut self, local: &LocalSlot) -> Result<Self::Address>;
 
-//     /// Constructs an address with an offset that is relative to the
-//     /// current position of the stack pointer (e.g. [sp + (sp_offset -
-//     /// offset)].
-//     fn address_from_sp(&self, offset: SPOffset) -> Result<Self::Address>;
+    /// Constructs an address with an offset that is relative to the
+    /// current position of the stack pointer (e.g. [sp + (sp_offset -
+    /// offset)].
+    fn address_from_sp(&self, offset: SPOffset) -> Result<Self::Address>;
 
 //     /// Constructs an address with an offset that is absolute to the
 //     /// current position of the stack pointer (e.g. [sp + offset].
@@ -790,8 +802,8 @@ pub(crate) trait MacroAssembler {
 //     /// stores.
 //     fn wasm_store(&mut self, src: Reg, dst: Self::Address, size: OperandSize) -> Result<()>;
 
-//     /// Perform a zero-extended stack load.
-//     fn load(&mut self, src: Self::Address, dst: WritableReg, size: OperandSize) -> Result<()>;
+    /// Perform a zero-extended stack load.
+    fn load(&mut self, src: Self::Address, dst: WritableReg, size: OperandSize) -> Result<()>;
 
 //     /// Perform a WebAssembly load.
 //     /// A WebAssembly load introduces several additional invariants compared to

@@ -1,4 +1,6 @@
 use anyhow::{bail, ensure, Error, Result};
+use crate::abi;
+use crate::isa::x64;
 use crate::wasmtime_environ::{VMOffsets, WasmHeapType, WasmValType};
 
 // use super::ControlStackFrame;
@@ -319,16 +321,16 @@ impl<'a> CodeGenContext<'a, Emission> {
             // Val::F32(imm) => masm.mov(writable!(dst), RegImm::f32(imm.bits()), size),
             // Val::F64(imm) => masm.mov(writable!(dst), RegImm::f64(imm.bits()), size),
             // Val::V128(imm) => masm.mov(writable!(dst), RegImm::v128(*imm), size),
+            Val::Local(local) => {
+                let slot = self.frame.get_wasm_local(local.index);
+                let addr = masm.local_address(&slot)?;
+                masm.load(addr, writable!(dst), size)
+            }
+            Val::Memory(mem) => {
+                let addr = masm.address_from_sp(mem.slot.offset)?;
+                masm.load(addr, writable!(dst), size)
+            }
             _ => panic!("unsupported value types")
-            // Val::Local(local) => {
-            //     let slot = self.frame.get_wasm_local(local.index);
-            //     let addr = masm.local_address(&slot)?;
-            //     masm.load(addr, writable!(dst), size)
-            // }
-            // Val::Memory(mem) => {
-            //     let addr = masm.address_from_sp(mem.slot.offset)?;
-            //     masm.load(addr, writable!(dst), size)
-            // }
         }
     }
 
@@ -672,11 +674,10 @@ impl<'a> CodeGenContext<'a, Emission> {
                     *v = Val::mem(r.ty, slot);
                 }
                 Val::Local(local) => {
-                    todo!()
-                    // let slot = frame.get_wasm_local(local.index);
-                    // let addr = masm.local_address(&slot)?;
-                    // let scratch = scratch!(M, &slot.ty);
-                    // masm.load(addr, writable!(scratch), slot.ty.try_into()?)?;
+                    let slot = frame.get_wasm_local(local.index);
+                    let addr = masm.local_address(&slot)?;
+                    let scratch = scratch!(M, &slot.ty);
+                    masm.load(addr, writable!(scratch), slot.ty.try_into()?)?;
                     // let stack_slot = masm.push(scratch, slot.ty.try_into()?)?;
                     // *v = Val::mem(slot.ty, stack_slot);
                 }

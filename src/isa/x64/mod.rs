@@ -27,7 +27,7 @@ use crate::isa::TargetIsa;
 // use self::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 
 mod abi;
-// mod address;
+mod address;
 pub mod asm;
 pub mod masm;
 // // Not all the fpr and gpr constructors are used at the moment;

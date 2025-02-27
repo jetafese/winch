@@ -1,13 +1,13 @@
 use super::{
-    // abi::X64ABI,
-    // address::Address,
+    abi::X64ABI,
+    address::Address,
     asm::Assembler,
     // asm::{Assembler, PatchableAddToReg},
     regs::{self, rbp, rsp},
 };
 use anyhow::{anyhow, bail, Error, Result};
 
-use crate::cranelift_codegen::isa::x64::args::CC;
+use crate::{abi::LocalSlot, cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}}};
 use crate::masm::{
     // DivKind, ExtendKind, FloatCmpKind, IntCmpKind, 
     MacroAssembler as Masm, SPOffset, StackSlot,
@@ -80,9 +80,9 @@ pub(crate) struct MacroAssembler {
 }
 
 impl Masm for MacroAssembler {
-//     type Address = Address;
+    type Address = Address;
 //     type Ptr = u8;
-//     type ABI = X64ABI;
+    type ABI = X64ABI;
 
 //     fn frame_setup(&mut self) -> Result<()> {
 //         let frame_pointer = rbp();
@@ -148,9 +148,8 @@ impl Masm for MacroAssembler {
                 let bytes = size.bytes();
                 self.reserve_stack(bytes)?;
                 let sp_offset = SPOffset::from_u32(self.sp_offset);
-                todo!();
-                // self.asm
-                //     .mov_rm(reg, &self.address_from_sp(sp_offset)?, size, TRUSTED_FLAGS);
+                self.asm
+                    .mov_rm(reg, &self.address_from_sp(sp_offset)?, size, TRUSTED_FLAGS);
                 bytes
             }
             // (RegClass::Float, _) => {
@@ -182,16 +181,16 @@ impl Masm for MacroAssembler {
         Ok(())
     }
 
-//     fn free_stack(&mut self, bytes: u32) -> Result<()> {
-//         if bytes == 0 {
-//             return Ok(());
-//         }
-//         self.asm
-//             .add_ir(bytes as i32, writable!(rsp()), OperandSize::S64);
-//         self.decrement_sp(bytes);
+    fn free_stack(&mut self, bytes: u32) -> Result<()> {
+        if bytes == 0 {
+            return Ok(());
+        }
+        self.asm
+            .add_ir(bytes as i32, writable!(rsp()), OperandSize::S64);
+        self.decrement_sp(bytes);
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
 //     fn reset_stack_pointer(&mut self, offset: SPOffset) -> Result<()> {
 //         self.sp_offset = offset.as_u32();
@@ -199,26 +198,26 @@ impl Masm for MacroAssembler {
 //         Ok(())
 //     }
 
-//     fn local_address(&mut self, local: &LocalSlot) -> Result<Address> {
-//         let (reg, offset) = if local.addressed_from_sp() {
-//             let offset = self
-//                 .sp_offset
-//                 .checked_sub(local.offset)
-//                 .ok_or_else(|| CodeGenError::invalid_local_offset())?;
-//             (rsp(), offset)
-//         } else {
-//             (rbp(), local.offset)
-//         };
+    fn local_address(&mut self, local: &LocalSlot) -> Result<Address> {
+        let (reg, offset) = if local.addressed_from_sp() {
+            let offset = self
+                .sp_offset
+                .checked_sub(local.offset)
+                .ok_or_else(|| Error::msg("invalid_local_offset"))?;
+            (rsp(), offset)
+        } else {
+            (rbp(), local.offset)
+        };
 
-//         Ok(Address::offset(reg, offset))
-//     }
+        Ok(Address::offset(reg, offset))
+    }
 
-//     fn address_from_sp(&self, offset: SPOffset) -> Result<Self::Address> {
-//         Ok(Address::offset(
-//             regs::rsp(),
-//             self.sp_offset - offset.as_u32(),
-//         ))
-//     }
+    fn address_from_sp(&self, offset: SPOffset) -> Result<Self::Address> {
+        Ok(Address::offset(
+            regs::rsp(),
+            self.sp_offset - offset.as_u32(),
+        ))
+    }
 
 //     fn address_at_sp(&self, offset: SPOffset) -> Result<Self::Address> {
 //         Ok(Address::offset(regs::rsp(), offset.as_u32()))
@@ -242,24 +241,26 @@ impl Masm for MacroAssembler {
 
     fn pop(&mut self, dst: WritableReg, size: OperandSize) -> Result<()> {
         let current_sp = SPOffset::from_u32(self.sp_offset);
-        todo!();
-        // let _ = match (dst.to_reg().class(), size) {
-        //     (RegClass::Int, OperandSize::S32) => {
-        //         let addr = self.address_from_sp(current_sp)?;
-        //         self.asm.movzx_mr(&addr, dst, size.into(), TRUSTED_FLAGS);
-        //         self.free_stack(size.bytes())?;
-        //     }
-        //     (RegClass::Int, OperandSize::S64) => {
-        //         self.asm.pop_r(dst);
-        //         self.decrement_sp(<Self::ABI as ABI>::word_bytes() as u32);
-        //     }
-        //     // (RegClass::Float, _) | (RegClass::Vector, _) => {
-        //     //     let addr = self.address_from_sp(current_sp)?;
-        //     //     self.asm.xmm_mov_mr(&addr, dst, size, TRUSTED_FLAGS);
-        //     //     self.free_stack(size.bytes())?;
-        //     // }
-        //     _ => bail!(Error::msg("invalid_operand_combination")),
-        // };
+        let _ = match (dst.to_reg().class(), size) {
+            (RegClass::Int, OperandSize::S32) => {
+                let addr = self.address_from_sp(current_sp)?;
+                self.asm.movzx_mr(&addr, dst, size.into(), TRUSTED_FLAGS);
+                self.free_stack(size.bytes())?;
+            }
+            (RegClass::Int, OperandSize::S64) => {
+                self.asm.pop_r(dst);
+                // self.decrement_sp(<Self::ABI as ABI>::word_bytes() as u32);
+                // word_bytes is 64 / 8
+                let word_bytes = 8;
+                self.decrement_sp(word_bytes);
+            }
+            // (RegClass::Float, _) | (RegClass::Vector, _) => {
+            //     let addr = self.address_from_sp(current_sp)?;
+            //     self.asm.xmm_mov_mr(&addr, dst, size, TRUSTED_FLAGS);
+            //     self.free_stack(size.bytes())?;
+            // }
+            _ => bail!(Error::msg("invalid_operand_combination")),
+        };
         Ok(())
     }
 
@@ -292,9 +293,9 @@ impl Masm for MacroAssembler {
 //         Ok(())
 //     }
 
-//     fn load(&mut self, src: Address, dst: WritableReg, size: OperandSize) -> Result<()> {
-//         self.load_impl::<Self>(src, dst, size, TRUSTED_FLAGS)
-//     }
+    fn load(&mut self, src: Address, dst: WritableReg, size: OperandSize) -> Result<()> {
+        self.load_impl::<Self>(src, dst, size, TRUSTED_FLAGS)
+    }
 
 //     fn wasm_load(
 //         &mut self,
@@ -334,7 +335,7 @@ impl Masm for MacroAssembler {
             (RegImm::Imm(imm), _) => match imm {
                 I::I32(v) => Ok(self.asm.mov_ir(v as u64, dst, size)),
                 I::I64(v) => Ok(self.asm.mov_ir(v, dst, size)),
-                _ => { todo!() }
+                _ => { panic!("unsupported types") }
                 // I::F32(v) => {
                 //     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
                 //     self.asm.xmm_mov_mr(&addr, dst, size, TRUSTED_FLAGS);
@@ -1274,15 +1275,15 @@ impl MacroAssembler {
         self.sp_max = self.sp_max.max(self.sp_offset);
     }
 
-//     fn decrement_sp(&mut self, bytes: u32) {
-//         assert!(
-//             self.sp_offset >= bytes,
-//             "sp offset = {}; bytes = {}",
-//             self.sp_offset,
-//             bytes
-//         );
-//         self.sp_offset -= bytes;
-//     }
+    fn decrement_sp(&mut self, bytes: u32) {
+        assert!(
+            self.sp_offset >= bytes,
+            "sp offset = {}; bytes = {}",
+            self.sp_offset,
+            bytes
+        );
+        self.sp_offset -= bytes;
+    }
 
     fn load_constant(&mut self, constant: &I, dst: WritableReg, size: OperandSize) -> Result<()> {
         match constant {
@@ -1292,34 +1293,34 @@ impl MacroAssembler {
         }
     }
 
-//     /// A common implementation for zero-extend stack loads.
-//     fn load_impl<M>(
-//         &mut self,
-//         src: Address,
-//         dst: WritableReg,
-//         size: OperandSize,
-//         flags: MemFlags,
-//     ) -> Result<()>
-//     where
-//         M: Masm,
-//     {
-//         if dst.to_reg().is_int() {
-//             let access_bits = size.num_bits() as u16;
+    /// A common implementation for zero-extend stack loads.
+    fn load_impl<M>(
+        &mut self,
+        src: Address,
+        dst: WritableReg,
+        size: OperandSize,
+        flags: MemFlags,
+    ) -> Result<()>
+    where
+        M: Masm,
+    {
+        if dst.to_reg().is_int() {
+            let access_bits = size.num_bits() as u16;
 
-//             let ext_mode = match access_bits {
-//                 8 => Some(ExtMode::BQ),
-//                 16 => Some(ExtMode::WQ),
-//                 32 => Some(ExtMode::LQ),
-//                 _ => None,
-//             };
+            let ext_mode = match access_bits {
+                8 => Some(ExtMode::BQ),
+                16 => Some(ExtMode::WQ),
+                32 => Some(ExtMode::LQ),
+                _ => None,
+            };
 
-//             self.asm.movzx_mr(&src, dst, ext_mode, flags);
-//         } else {
-//             self.asm.xmm_mov_mr(&src, dst, size, flags);
-//         }
+            self.asm.movzx_mr(&src, dst, ext_mode, flags);
+        } else {
+            self.asm.xmm_mov_mr(&src, dst, size, flags);
+        }
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
 //     /// A common implementation for stack stores.
 //     fn store_impl(
