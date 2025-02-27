@@ -5,6 +5,7 @@
 #![no_main]
 #![feature(default_alloc_error_handler)]
 
+use codegen::{CodeGenContext, Prologue};
 use libc_alloc::LibcAlloc;
 
 #[global_allocator]
@@ -100,9 +101,8 @@ fn checked_uadd() {
 }
 
 #[no_mangle]
-fn visit_i32_const() {
-    // setup context
-    let vmoffsets = VMOffsets::new();
+fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
+    // let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
     let frame = Frame::new().unwrap();
 
@@ -118,8 +118,16 @@ fn visit_i32_const() {
     );
     let regalloc = regalloc::RegAlloc::from(gpr, fpr);
     let mut codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
-    let val = nondet_i32();
+    return codegen_context;
+}
+
+#[no_mangle]
+fn visit_i32_const() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let mut codegen_context = setup_context(&vmoffsets);
     // SUT
+    let val = nondet_i32();
     codegen_context.stack.push(Val::i32(val));
 }
 
@@ -127,22 +135,8 @@ fn visit_i32_const() {
 fn visit_i64_const() {
     // setup context
     let vmoffsets = VMOffsets::new();
-    let stack = Stack::new();
-    let frame = Frame::new().unwrap();
-
-    let gpr = RegBitSet::int(
-        ALL_GPR.into(),
-        NON_ALLOCATABLE_GPR.into(),
-        usize::try_from(MAX_GPR).unwrap(),
-    );
-    let fpr = RegBitSet::float(
-        ALL_FPR.into(),
-        NON_ALLOCATABLE_FPR.into(),
-        usize::try_from(MAX_FPR).unwrap(),
-    );
-    let regalloc = regalloc::RegAlloc::from(gpr, fpr);
-    let mut codegen_context = codegen::CodeGenContext::new(regalloc, stack, frame, &vmoffsets);
-    let val = nondet_i64();
+    let mut codegen_context = setup_context(&vmoffsets);
     // SUT
+    let val = nondet_i64();
     codegen_context.stack.push(Val::i64(val));
 }
