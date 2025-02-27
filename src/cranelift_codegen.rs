@@ -954,6 +954,14 @@ pub mod isa {
                 cc: CC,
                 trap_code: TrapCode,
             },
+            MovRR {
+                size: OperandSize,
+                src: args::Gpr,
+                dst: args::WritableGpr,
+            },
+            Push64 {
+                src: args::GprMemImm,
+            },
         }
         pub mod x64_settings {
             #[derive(Clone, Hash)]
