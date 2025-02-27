@@ -1,11 +1,11 @@
 //! x64 addressing mode.
 
 use crate::reg::Reg;
-use cranelift_codegen::ir::Constant;
+use crate::cranelift_codegen::ir::Constant;
 
 /// Memory address representation.
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum Address {
+pub enum Address {
     /// Base register with an immediate offset.
     Offset { base: Reg, offset: u32 },
     /// Address to identify a constant.

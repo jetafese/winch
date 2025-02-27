@@ -178,6 +178,22 @@ pub mod ir {
         pub fn new() -> Self { Self {}}
     }
 
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+    pub struct Constant(u32);
+    
+    impl Constant {
+        /// Create a const reference from its number.
+        ///
+        /// This method is for use by the parser.
+        pub fn with_number(n: u32) -> Option<Self> {
+            if n < u32::MAX {
+                Some(Self(n))
+            } else {
+                None
+            }
+        }
+    }
+
     #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
     pub struct TrapCode(core::num::NonZeroU8);
 
@@ -432,6 +448,42 @@ pub mod isa {
                     target: MachLabel,
                 },
             }
+            impl Amode {
+                /// Create an immediate sign-extended and register addressing mode.
+                pub fn imm_reg(simm32: i32, base: Reg) -> Self {
+                    // debug_assert!(base.class() == RegClass::Int);
+                    Self::ImmReg {
+                        simm32,
+                        base,
+                        flags: MemFlags::trusted(),
+                    }
+                }
+
+                /// Set the specified [MemFlags] to the [Amode].
+                pub fn with_flags(&self, flags: MemFlags) -> Self {
+                    match self {
+                        &Self::ImmReg { simm32, base, .. } => Self::ImmReg {
+                            simm32,
+                            base,
+                            flags,
+                        },
+                        &Self::ImmRegRegShift {
+                            simm32,
+                            base,
+                            index,
+                            shift,
+                            ..
+                        } => Self::ImmRegRegShift {
+                            simm32,
+                            base,
+                            index,
+                            shift,
+                            flags,
+                        },
+                        _ => panic!("Amode {self:?} cannot take memflags"),
+                    }
+                }
+            }
 
             #[derive(Clone, Debug)]
             pub enum SyntheticAmode {
@@ -457,6 +509,10 @@ pub mod isa {
             impl SyntheticAmode {
                 pub fn aligned(&self) -> bool {
                     todo!()
+                }
+                /// Create a real addressing mode.
+                pub fn real(amode: Amode) -> Self {
+                    Self::Real(amode)
                 }
             }
             #[derive(Copy, Clone, Debug, PartialEq)]
@@ -495,6 +551,11 @@ pub mod isa {
                 pub fn reg(reg: Reg) -> Self {
                     debug_assert!(reg.class() == RegClass::Int || reg.class() == RegClass::Float);
                     Self::Reg { reg }
+                }
+
+                /// Create a memory operand.
+                pub fn mem(addr: impl Into<SyntheticAmode>) -> Self {
+                    Self::Mem { addr: addr.into() }
                 }
             }
 
@@ -933,6 +994,29 @@ pub mod isa {
                 /// not parity
                 NP = 11,
             }
+
+            #[derive(Clone, Debug, PartialEq)]
+            pub enum ExtMode {
+                /// Byte -> Longword.
+                BL,
+                /// Byte -> Quadword.
+                BQ,
+                /// Word -> Longword.
+                WL,
+                /// Word -> Quadword.
+                WQ,
+                /// Longword -> Quadword.
+                LQ,
+            }
+
+            #[derive(Clone, Copy, Debug, PartialEq)]
+            #[allow(dead_code)] // some variants here aren't used just yet
+            #[allow(missing_docs)]
+            pub enum SseOpcode {
+                Movss,
+                Movsd,
+                Movdqu,
+            }
         }
         #[derive(Clone, Debug)]
         pub enum Inst {
@@ -961,6 +1045,28 @@ pub mod isa {
             },
             Push64 {
                 src: args::GprMemImm,
+            },
+            Pop64 {
+                dst: args::WritableGpr,
+            },
+            MovzxRmR {
+                ext_mode: args::ExtMode,
+                src: args::GprMem,
+                dst: args::WritableGpr,
+            },
+            Mov64MR {
+                src: args::SyntheticAmode,
+                dst: args::WritableGpr,
+            },
+            MovRM {
+                size: OperandSize,
+                src: args::Gpr,
+                dst: args::SyntheticAmode,
+            },
+            XmmUnaryRmRUnaligned {
+                op: args::SseOpcode,
+                src: args::XmmMem,
+                dst: args::WritableXmm,
             },
         }
         pub mod x64_settings {

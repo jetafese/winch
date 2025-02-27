@@ -2,22 +2,23 @@ use anyhow::Result;
 
 use crate::{
     // abi::{align_to, ABIOperand, ABISig, LocalSlot, ABI},
+    abi::LocalSlot,
     codegen::{CodeGenPhase, Emission, Prologue},
     // masm::MacroAssembler,
 };
 // use anyhow::Result;
-// use smallvec::SmallVec;
+use smallvec::SmallVec;
 use core::marker::PhantomData;
 // use core::ops::Range;
 // use crate::wasmparser::{BinaryReader, FuncValidator, ValidatorResources};
 // use crate::wasmtime_environ::{TypeConvert, WasmValType};
 
-// /// WebAssembly locals.
-// // TODO:
-// // SpiderMonkey's implementation uses 16;
-// // (ref: https://searchfox.org/mozilla-central/source/js/src/wasm/WasmBCFrame.h#585)
-// // during instrumentation we should measure to verify if this is a good default.
-// pub(crate) type WasmLocals = SmallVec<[LocalSlot; 16]>;
+/// WebAssembly locals.
+// TODO:
+// SpiderMonkey's implementation uses 16;
+// (ref: https://searchfox.org/mozilla-central/source/js/src/wasm/WasmBCFrame.h#585)
+// during instrumentation we should measure to verify if this is a good default.
+pub(crate) type WasmLocals = SmallVec<[LocalSlot; 16]>;
 // /// Special local slots used by the compiler.
 // // Winch's ABI uses two extra parameters to store the callee and caller
 // // VMContext pointers.
@@ -87,9 +88,9 @@ pub(crate) struct Frame<P: CodeGenPhase> {
 
     // /// The local slots for the current function.
     // ///
-    // /// Locals get calculated when allocating a frame and are readonly
-    // /// through the function compilation lifetime.
-    // wasm_locals: WasmLocals,
+    /// Locals get calculated when allocating a frame and are readonly
+    /// through the function compilation lifetime.
+    wasm_locals: WasmLocals,
     // /// Special locals used by the internal ABI. See [`SpecialLocals`].
     // special_locals: SpecialLocals,
 
@@ -100,7 +101,7 @@ pub(crate) struct Frame<P: CodeGenPhase> {
 
 impl Frame<Prologue> {
     pub fn new() -> Result<Frame<Prologue>> {
-        Ok(Self { locals_size: 32, marker: PhantomData })
+        Ok(Self { locals_size: 32, marker: PhantomData, wasm_locals: Default::default() })
     }
     // /// Allocate a new [`Frame`].
     // pub fn new<A: ABI>(sig: &ABISig, defined_locals: &DefinedLocals) -> Result<Frame<Prologue>> {
@@ -174,6 +175,7 @@ impl Frame<Prologue> {
     /// Prepares the frame for the [`Emission`] code generation phase.
     pub fn for_emission(self) -> Frame<Emission> {
         Frame {
+            wasm_locals: self.wasm_locals,
             locals_size: self.locals_size,
             marker: PhantomData,
         }
@@ -258,19 +260,19 @@ impl Frame<Prologue> {
 //     }
 }
 
-// impl Frame<Emission> {
-//     /// Get the [`LocalSlot`] for a WebAssembly local.
-//     /// This method assumes that the index is bound to u32::MAX, representing
-//     /// the index space for WebAssembly locals.
-//     ///
-//     /// # Panics
-//     /// This method panics if the index is not associated to a valid WebAssembly
-//     /// local.
-//     pub fn get_wasm_local(&self, index: u32) -> &LocalSlot {
-//         self.wasm_locals
-//             .get(index as usize)
-//             .unwrap_or_else(|| panic!(" Expected WebAssembly local at slot: {index}"))
-//     }
+impl Frame<Emission> {
+    /// Get the [`LocalSlot`] for a WebAssembly local.
+    /// This method assumes that the index is bound to u32::MAX, representing
+    /// the index space for WebAssembly locals.
+    ///
+    /// # Panics
+    /// This method panics if the index is not associated to a valid WebAssembly
+    /// local.
+    pub fn get_wasm_local(&self, index: u32) -> &LocalSlot {
+        self.wasm_locals
+            .get(index as usize)
+            .unwrap_or_else(|| panic!(" Expected WebAssembly local at slot: {index}"))
+    }
 
 //     /// Get the [`LocalSlot`] for a special local.
 //     ///
@@ -300,4 +302,4 @@ impl Frame<Prologue> {
 //         let slot = self.get_wasm_local(index);
 //         Ok((slot.ty, masm.local_address(&slot)?))
 //     }
-// }
+}
