@@ -440,8 +440,8 @@ pub(crate) enum Imm {
     // F32(u32),
     // /// F64 immediate.
     // F64(u64),
-    /// V128 immediate.
-    V128(i128),
+    // /// V128 immediate.
+    // V128(i128),
 }
 
 impl Imm {
@@ -455,20 +455,10 @@ impl Imm {
 //         Self::I32(val as u32)
 //     }
 
-//     /// Create a new F32 immediate.
-//     pub fn f32(bits: u32) -> Self {
-//         Self::F32(bits)
-//     }
-
-//     /// Create a new F64 immediate.
-//     pub fn f64(bits: u64) -> Self {
-//         Self::F64(bits)
-//     }
-
-//     /// Create a new V128 immediate.
-//     pub fn v128(bits: i128) -> Self {
-//         Self::V128(bits)
-//     }
+    // /// Create a new V128 immediate.
+    // pub fn v128(bits: i128) -> Self {
+    //     Self::V128(bits)
+    // }
 
     /// Convert the immediate to i32, if possible.
     pub fn to_i32(&self) -> Option<i32> {
