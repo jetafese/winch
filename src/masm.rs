@@ -1,6 +1,23 @@
 use anyhow::Result;
 
 use crate::{cranelift_codegen::ir::TrapCode, reg::{Reg, WritableReg}};
+// use crate::abi::{self, align_to, scratch, LocalSlot};
+use crate::abi::LocalSlot;
+// use crate::codegen::{CodeGenContext, Emission, FuncEnv};
+// use crate::isa::{
+//     reg::{writable, Reg, WritableReg},
+//     CallingConvention,
+// };
+// use anyhow::Result;
+use crate::cranelift_codegen::ir::MemFlags;
+// use crate::cranelift_codegen::{
+//     binemit::CodeOffset,
+//     ir::{Endianness, LibCall, MemFlags, RelSourceLoc, SourceLoc, UserExternalNameRef},
+//     Final, MachBufferFinalized, MachLabel,
+// };
+// use std::{fmt::Debug, ops::Range};
+// use crate::wasmtime_environ::PtrSize;
+
 
 #[derive(Copy, Debug, Clone, Eq, PartialEq)]
 pub enum OperandSize {
@@ -153,26 +170,6 @@ pub enum RoundingMode {
     Down,
     Zero,
 }
-
-
-// use crate::abi::{self, align_to, scratch, LocalSlot};
-use crate::abi::LocalSlot;
-// use crate::codegen::{CodeGenContext, Emission, FuncEnv};
-// use crate::isa::{
-//     reg::{writable, Reg, WritableReg},
-//     CallingConvention,
-// };
-// use anyhow::Result;
-use crate::cranelift_codegen::ir::MemFlags;
-// use crate::cranelift_codegen::{
-//     binemit::CodeOffset,
-//     ir::{Endianness, LibCall, MemFlags, RelSourceLoc, SourceLoc, UserExternalNameRef},
-//     Final, MachBufferFinalized, MachLabel,
-// };
-// use std::{fmt::Debug, ops::Range};
-// use crate::wasmtime_environ::PtrSize;
-
-// pub(crate) use crate::cranelift_codegen::ir::TrapCode;
 
 // #[derive(Eq, PartialEq)]
 // pub(crate) enum DivKind {
