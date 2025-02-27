@@ -101,6 +101,7 @@ fn checked_uadd() {
     let ptr_size = 8;
     let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
     let mut masm = masm_64.unwrap();
+    // invariant: dst != src
     let src = Reg(PReg::new(2, regalloc2::RegClass::Int));
     let dst_val = nondet_i32();
     let dst = RegImm::Imm(masm::Imm::I64(dst_val as u64));
