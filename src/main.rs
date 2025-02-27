@@ -4,6 +4,7 @@
 #![no_std]
 #![no_main]
 #![feature(default_alloc_error_handler)]
+#![feature(lang_items)]
 
 use codegen::{CodeGenContext, Prologue};
 use libc_alloc::LibcAlloc;
@@ -13,6 +14,10 @@ static ALLOCATOR: LibcAlloc = LibcAlloc;
 
 #[link(name="c")]
 extern "C" {}
+
+#[cfg(not(test))]
+#[lang = "eh_personality"]
+extern "C" fn rust_eh_personality() {}
 
 pub mod isa;
 // pub use isa::*;
@@ -32,12 +37,12 @@ mod target_lexicon;
 
 use cranelift_codegen::{ir::TrapCode, Writable};
 use masm::{MacroAssembler, RegImm};
-use isa::reg::{self, Reg};
+use isa::reg::{self, writable, Reg};
 use regalloc2::PReg;
 use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_i64, nondet_u32, nondet_u8};
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
-use stack::{Stack, Val};
+use stack::{Stack, TypedReg, Val};
 use frame::Frame;
 use wasmtime_environ::VMOffsets;
 
@@ -74,6 +79,7 @@ fn visitors() {
     match v {
         0 => visit_i32_const(),
         1 => visit_i64_const(),
+        2 => visit_i32_add(),
         _ => (),
     }
 }
@@ -141,4 +147,27 @@ fn visit_i64_const() {
     // SUT
     let val = nondet_i64();
     codegen_context.stack.push(Val::i64(val));
+}
+
+#[no_mangle]
+fn visit_i32_add() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let mut codegen_context = setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let mut masm = masm_64.unwrap();
+    // SUT
+    // invariant: top value on stack can be const/reg
+    let val = nondet_i32();
+    emission_context.stack.push(Val::I32(val));
+    let res = emission_context.i32_binop(&mut masm, |masm, dst, src, size| {
+        masm.add(writable!(dst), dst, src, size)?;
+        Ok(TypedReg::i32(dst))
+    });
+    assert(res.is_ok());
+    // assert!(res.is_ok());
 }

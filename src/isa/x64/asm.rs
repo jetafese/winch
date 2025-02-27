@@ -286,10 +286,10 @@ impl Assembler {
     //     self.emit(Inst::Unwind { inst })
     // }
 
-    // /// Push register.
-    // pub fn push_r(&mut self, reg: Reg) {
-    //     self.emit(Inst::Push64 { src: reg.into() });
-    // }
+    /// Push register.
+    pub fn push_r(&mut self, reg: Reg) {
+        self.emit(Inst::Push64 { src: reg.into() });
+    }
 
     // /// Pop to register.
     // pub fn pop_r(&mut self, dst: WritableReg) {
@@ -305,14 +305,14 @@ impl Assembler {
     //     });
     // }
 
-    // /// Register-to-register move.
-    // pub fn mov_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
-    //     self.emit(Inst::MovRR {
-    //         src: src.into(),
-    //         dst: dst.map(Into::into),
-    //         size: size.into(),
-    //     });
-    // }
+    /// Register-to-register move.
+    pub fn mov_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
+        self.emit(Inst::MovRR {
+            src: src.into(),
+            dst: dst.map(Into::into),
+            size: size.into(),
+        });
+    }
 
     // /// Register-to-memory move.
     // pub fn mov_rm(&mut self, src: Reg, addr: &Address, size: OperandSize, flags: MemFlags) {

@@ -16,6 +16,19 @@ pub enum OperandSize {
     S128,
 }
 
+impl OperandSize {
+    /// The number of bytes in the operand.
+    pub fn bytes(&self) -> u32 {
+        match self {
+            Self::S8 => 1,
+            Self::S16 => 2,
+            Self::S32 => 4,
+            Self::S64 => 8,
+            Self::S128 => 16,
+        }
+    }
+}
+
 #[derive(Eq, PartialEq)]
 pub(crate) enum MulWideKind {
     Signed,
@@ -138,6 +151,7 @@ pub enum RoundingMode {
 //     CallingConvention,
 // };
 // use anyhow::Result;
+use crate::cranelift_codegen::ir::MemFlags;
 // use crate::cranelift_codegen::{
 //     binemit::CodeOffset,
 //     ir::{Endianness, LibCall, MemFlags, RelSourceLoc, SourceLoc, UserExternalNameRef},
@@ -429,6 +443,29 @@ pub(crate) enum RegImm {
     Imm(Imm),
 }
 
+impl RegImm {
+    /// Register constructor.
+    pub fn reg(r: Reg) -> Self {
+        RegImm::Reg(r)
+    }
+
+    /// I64 immediate constructor.
+    pub fn i64(val: i64) -> Self {
+        RegImm::Imm(Imm::i64(val))
+    }
+
+    /// I32 immediate constructor.
+    pub fn i32(val: i32) -> Self {
+        RegImm::Imm(Imm::i32(val))
+    }
+}
+
+impl From<Reg> for RegImm {
+    fn from(r: Reg) -> Self {
+        Self::Reg(r)
+    }
+}
+
 /// An tagged representation of an immediate.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Imm {
@@ -445,15 +482,15 @@ pub(crate) enum Imm {
 }
 
 impl Imm {
-//     /// Create a new I64 immediate.
-//     pub fn i64(val: i64) -> Self {
-//         Self::I64(val as u64)
-//     }
+    /// Create a new I64 immediate.
+    pub fn i64(val: i64) -> Self {
+        Self::I64(val as u64)
+    }
 
-//     /// Create a new I32 immediate.
-//     pub fn i32(val: i32) -> Self {
-//         Self::I32(val as u32)
-//     }
+    /// Create a new I32 immediate.
+    pub fn i32(val: i32) -> Self {
+        Self::I32(val as u32)
+    }
 
     // /// Create a new V128 immediate.
     // pub fn v128(bits: i128) -> Self {
@@ -637,8 +674,8 @@ impl Imm {
 //     Zero,
 // }
 
-// /// Memory flags for trusted loads/stores.
-// pub const TRUSTED_FLAGS: MemFlags = MemFlags::trusted();
+/// Memory flags for trusted loads/stores.
+pub const TRUSTED_FLAGS: MemFlags = MemFlags::trusted();
 
 // /// Flags used for WebAssembly loads / stores.
 // /// Untrusted by default so we don't set `no_trap`.
@@ -693,8 +730,8 @@ pub(crate) trait MacroAssembler {
 //         self.frame_restore()
 //     }
 
-//     /// Reserve stack space.
-//     fn reserve_stack(&mut self, bytes: u32) -> Result<()>;
+    /// Reserve stack space.
+    fn reserve_stack(&mut self, bytes: u32) -> Result<()>;
 
 //     /// Free stack space.
 //     fn free_stack(&mut self, bytes: u32) -> Result<()>;
@@ -733,8 +770,8 @@ pub(crate) trait MacroAssembler {
 //         f: impl FnMut(&mut Self) -> Result<(CalleeKind, CallingConvention)>,
 //     ) -> Result<u32>;
 
-//     /// Get stack pointer offset.
-//     fn sp_offset(&self) -> Result<SPOffset>;
+    /// Get stack pointer offset.
+    fn sp_offset(&self) -> Result<SPOffset>;
 
 //     /// Perform a stack store.
 //     fn store(&mut self, src: RegImm, dst: Self::Address, size: OperandSize) -> Result<()>;
@@ -784,11 +821,11 @@ pub(crate) trait MacroAssembler {
 //         _size: OperandSize,
 //     ) -> Result<()>;
 
-//     /// Pop a value from the machine stack into the given register.
-//     fn pop(&mut self, dst: WritableReg, size: OperandSize) -> Result<()>;
+    /// Pop a value from the machine stack into the given register.
+    fn pop(&mut self, dst: WritableReg, size: OperandSize) -> Result<()>;
 
-//     /// Perform a move.
-//     fn mov(&mut self, dst: WritableReg, src: RegImm, size: OperandSize) -> Result<()>;
+    /// Perform a move.
+    fn mov(&mut self, dst: WritableReg, src: RegImm, size: OperandSize) -> Result<()>;
 
 //     /// Perform a conditional move.
 //     fn cmov(&mut self, dst: WritableReg, src: Reg, cc: IntCmpKind, size: OperandSize)
@@ -1025,13 +1062,13 @@ pub(crate) trait MacroAssembler {
 //     /// false.
 //     fn ctz(&mut self, dst: WritableReg, src: Reg, size: OperandSize) -> Result<()>;
 
-//     /// Push the register to the stack, returning the stack slot metadata.
-//     // NB
-//     // The stack alignment should not be assumed after any call to `push`,
-//     // unless explicitly aligned otherwise.  Typically, stack alignment is
-//     // maintained at call sites and during the execution of
-//     // epilogues.
-//     fn push(&mut self, src: Reg, size: OperandSize) -> Result<StackSlot>;
+    /// Push the register to the stack, returning the stack slot metadata.
+    // NB
+    // The stack alignment should not be assumed after any call to `push`,
+    // unless explicitly aligned otherwise.  Typically, stack alignment is
+    // maintained at call sites and during the execution of
+    // epilogues.
+    fn push(&mut self, src: Reg, size: OperandSize) -> Result<StackSlot>;
 
 //     /// Finalize the assembly and return the result.
 //     fn finalize(self, base: Option<SourceLoc>) -> Result<MachBufferFinalized<Final>>;

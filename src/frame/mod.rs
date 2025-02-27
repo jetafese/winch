@@ -171,17 +171,21 @@ impl Frame<Prologue> {
 //         self.special_locals.iter().chain(self.wasm_locals.iter())
 //     }
 
-//     /// Prepares the frame for the [`Emission`] code generation phase.
-//     pub fn for_emission(self) -> Frame<Emission> {
-//         Frame {
-//             wasm_locals: self.wasm_locals,
-//             special_locals: self.special_locals,
-//             locals_size: self.locals_size,
-//             defined_locals_range: self.defined_locals_range,
-//             results_base_slot: self.results_base_slot,
-//             marker: PhantomData,
-//         }
-//     }
+    /// Prepares the frame for the [`Emission`] code generation phase.
+    pub fn for_emission(self) -> Frame<Emission> {
+        Frame {
+            locals_size: self.locals_size,
+            marker: PhantomData,
+        }
+        // Frame {
+        //     wasm_locals: self.wasm_locals,
+        //     special_locals: self.special_locals,
+        //     locals_size: self.locals_size,
+        //     defined_locals_range: self.defined_locals_range,
+        //     results_base_slot: self.results_base_slot,
+        //     marker: PhantomData,
+        // }
+    }
 
 //     fn compute_arg_slots<A: ABI>(sig: &ABISig) -> Result<(SpecialLocals, WasmLocals, u32)> {
 //         // Go over the function ABI-signature and
