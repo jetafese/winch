@@ -543,16 +543,16 @@ impl Assembler {
     //     })
     // }
 
-    // /// Subtract register and register
-    // pub fn sub_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
-    //     self.emit(Inst::AluRmiR {
-    //         size: size.into(),
-    //         op: AluRmiROpcode::Sub,
-    //         src1: dst.to_reg().into(),
-    //         src2: src.into(),
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+    /// Subtract register and register
+    pub fn sub_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
+        self.emit(Inst::AluRmiR {
+            size: size.into(),
+            op: AluRmiROpcode::Sub,
+            src1: dst.to_reg().into(),
+            src2: src.into(),
+            dst: dst.map(Into::into),
+        });
+    }
 
     /// Subtact immediate register.
     pub fn sub_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
