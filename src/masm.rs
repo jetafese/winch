@@ -913,8 +913,8 @@ pub(crate) trait MacroAssembler {
         trap: TrapCode,
     ) -> Result<()>;
 
-//     /// Perform subtraction operation.
-//     fn sub(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
+    /// Perform subtraction operation.
+    fn sub(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
 
 //     /// Perform multiplication operation.
 //     fn mul(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
