@@ -80,6 +80,7 @@ fn visitors() {
         0 => visit_i32_const(),
         1 => visit_i64_const(),
         2 => visit_i32_add(),
+        3 => visit_i64_add(),
         _ => (),
     }
 }
@@ -154,7 +155,7 @@ fn visit_i64_const() {
 fn visit_i32_add() {
     // setup context
     let vmoffsets = VMOffsets::new();
-    let mut codegen_context = setup_context(&vmoffsets);
+    let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
     let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
     let shared_flags = cranelift_codegen::settings::Flags::new();
@@ -162,7 +163,9 @@ fn visit_i32_add() {
     let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
     let mut masm = masm_64.unwrap();
     // SUT
-    // invariant: top value on stack can be const/reg
+    // invariant: top value on stack can be const/reg, second value should be dst reg
+    let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    emission_context.stack.push(Val::Reg(TypedReg::i32(dst)));
     let val = nondet_i32();
     emission_context.stack.push(Val::I32(val));
     let res = emission_context.i32_binop(&mut masm, |masm, dst, src, size| {
@@ -176,7 +179,7 @@ fn visit_i32_add() {
 fn visit_i64_add() {
     // setup context
     let vmoffsets = VMOffsets::new();
-    let mut codegen_context = setup_context(&vmoffsets);
+    let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
     let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
     let shared_flags = cranelift_codegen::settings::Flags::new();
@@ -185,6 +188,8 @@ fn visit_i64_add() {
     let mut masm = masm_64.unwrap();
     // SUT
     // invariant: top value on stack can be const/reg
+    let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
     let val = nondet_i64();
     emission_context.stack.push(Val::I64(val));
     let res = emission_context.i64_binop(&mut masm, |masm, dst, src, size| {
