@@ -19,6 +19,16 @@ extern "C" {}
 #[lang = "eh_personality"]
 extern "C" fn rust_eh_personality() {}
 
+// /// Workaround for rustc bug: https://github.com/rust-lang/rust/issues/47493
+// ///
+// /// It shouldn't even be possible to reach this function, thanks to panic=abort,
+// /// but libcore is compiled with unwinding enabled and that ends up making unreachable
+// /// references to this.
+#[no_mangle]
+extern "C" fn _Unwind_Resume() -> ! {
+    unreachable!("Unwinding not supported");
+}
+
 pub mod isa;
 // pub use isa::*;
 mod masm;
