@@ -64,11 +64,11 @@ impl From<Reg> for RegMemImm {
 //     }
 // }
 
-// impl From<Reg> for RegMem {
-//     fn from(value: Reg) -> Self {
-//         RegMem::Reg { reg: value.into() }
-//     }
-// }
+impl From<Reg> for RegMem {
+    fn from(value: Reg) -> Self {
+        RegMem::Reg { reg: value.into() }
+    }
+}
 
 // impl From<Reg> for WritableGpr {
 //     fn from(reg: Reg) -> Self {
@@ -90,11 +90,11 @@ impl From<Reg> for Gpr {
     }
 }
 
-// impl From<Reg> for GprMem {
-//     fn from(value: Reg) -> Self {
-//         GprMem::unwrap_new(value.into())
-//     }
-// }
+impl From<Reg> for GprMem {
+    fn from(value: Reg) -> Self {
+        GprMem::unwrap_new(value.into())
+    }
+}
 
 impl From<Reg> for GprMemImm {
     fn from(reg: Reg) -> Self {
@@ -971,25 +971,25 @@ impl Assembler {
     //     }
     // }
 
-    // /// Multiply immediate and register.
-    // pub fn mul_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
-    //     self.emit(Inst::IMulImm {
-    //         size: size.into(),
-    //         src1: dst.to_reg().into(),
-    //         src2: imm,
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+    /// Multiply immediate and register.
+    pub fn mul_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {
+        self.emit(Inst::IMulImm {
+            size: size.into(),
+            src1: dst.to_reg().into(),
+            src2: imm,
+            dst: dst.map(Into::into),
+        });
+    }
 
-    // /// Multiply register and register.
-    // pub fn mul_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
-    //     self.emit(Inst::IMul {
-    //         size: size.into(),
-    //         src1: dst.to_reg().into(),
-    //         src2: src.into(),
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+    /// Multiply register and register.
+    pub fn mul_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
+        self.emit(Inst::IMul {
+            size: size.into(),
+            src1: dst.to_reg().into(),
+            src2: src.into(),
+            dst: dst.map(Into::into),
+        });
+    }
 
     /// Add immediate and register.
     pub fn add_ir(&mut self, imm: i32, dst: WritableReg, size: OperandSize) {

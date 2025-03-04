@@ -916,8 +916,8 @@ pub(crate) trait MacroAssembler {
     /// Perform subtraction operation.
     fn sub(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
 
-//     /// Perform multiplication operation.
-//     fn mul(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
+    /// Perform multiplication operation.
+    fn mul(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;
 
 //     /// Perform a floating point add operation.
 //     fn float_add(&mut self, dst: WritableReg, lhs: Reg, rhs: Reg, size: OperandSize) -> Result<()>;
