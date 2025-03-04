@@ -678,8 +678,8 @@ impl<'a> CodeGenContext<'a, Emission> {
                     let addr = masm.local_address(&slot)?;
                     let scratch = scratch!(M, &slot.ty);
                     masm.load(addr, writable!(scratch), slot.ty.try_into()?)?;
-                    // let stack_slot = masm.push(scratch, slot.ty.try_into()?)?;
-                    // *v = Val::mem(slot.ty, stack_slot);
+                    let stack_slot = masm.push(scratch, slot.ty.try_into()?)?;
+                    *v = Val::mem(slot.ty, stack_slot);
                 }
                 _ => {}
             }
