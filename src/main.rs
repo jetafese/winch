@@ -93,6 +93,8 @@ fn visitors() {
         3 => visit_i64_add(),
         4 => visit_i32_sub(),
         5 => visit_i64_sub(),
+        6 => visit_i32_mul(),
+        7 => visit_i64_mul(),
         _ => (),
     }
 }
@@ -254,6 +256,54 @@ fn visit_i64_sub() {
     emission_context.stack.push(Val::I64(val));
     let res = emission_context.i64_binop(&mut masm, |masm, dst, src, size| {
         masm.sub(writable!(dst), dst, src, size)?;
+        Ok(TypedReg::i64(dst))
+    });
+    assert(res.is_ok());
+}
+
+#[no_mangle]
+fn visit_i32_mul() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let codegen_context = setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let mut masm = masm_64.unwrap();
+    // SUT
+    // invariant: top value on stack can be const/reg, second value should be dst reg
+    let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
+    let val = nondet_i64();
+    emission_context.stack.push(Val::I64(val));
+    let res = emission_context.i32_binop(&mut masm, |masm, dst, src, size| {
+        masm.mul(writable!(dst), dst, src, size)?;
+        Ok(TypedReg::i32(dst))
+    });
+    assert(res.is_ok());
+}
+
+#[no_mangle]
+fn visit_i64_mul() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let codegen_context = setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let mut masm = masm_64.unwrap();
+    // SUT
+    // invariant: top value on stack can be const/reg, second value should be dst reg
+    let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
+    let val = nondet_i64();
+    emission_context.stack.push(Val::I64(val));
+    let res = emission_context.i64_binop(&mut masm, |masm, dst, src, size| {
+        masm.mul(writable!(dst), dst, src, size)?;
         Ok(TypedReg::i64(dst))
     });
     assert(res.is_ok());

@@ -1034,6 +1034,18 @@ pub mod isa {
                 simm64: u64,
                 dst: args::WritableGpr,
             },
+            IMul {
+                size: OperandSize,
+                src1: args::Gpr,
+                src2: args::GprMem,
+                dst: args::WritableGpr,
+            },
+            IMulImm {
+                size: OperandSize,
+                src1: args::GprMem,
+                src2: i32,
+                dst: args::WritableGpr,
+            },
             TrapIf {
                 cc: CC,
                 trap_code: TrapCode,

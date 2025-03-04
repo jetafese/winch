@@ -424,26 +424,26 @@ impl Masm for MacroAssembler {
         Ok(())
     }
 
-//     fn mul(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()> {
-//         Self::ensure_two_argument_form(&dst.to_reg(), &lhs)?;
-//         match (rhs, dst) {
-//             (RegImm::Imm(imm), _) => {
-//                 if let Some(v) = imm.to_i32() {
-//                     self.asm.mul_ir(v, dst, size);
-//                 } else {
-//                     let scratch = regs::scratch();
-//                     self.load_constant(&imm, writable!(scratch), size)?;
-//                     self.asm.mul_rr(scratch, dst, size);
-//                 }
-//             }
+    fn mul(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()> {
+        Self::ensure_two_argument_form(&dst.to_reg(), &lhs)?;
+        match (rhs, dst) {
+            (RegImm::Imm(imm), _) => {
+                if let Some(v) = imm.to_i32() {
+                    self.asm.mul_ir(v, dst, size);
+                } else {
+                    let scratch = regs::scratch();
+                    self.load_constant(&imm, writable!(scratch), size)?;
+                    self.asm.mul_rr(scratch, dst, size);
+                }
+            }
 
-//             (RegImm::Reg(src), dst) => {
-//                 self.asm.mul_rr(src, dst, size);
-//             }
-//         }
+            (RegImm::Reg(src), dst) => {
+                self.asm.mul_rr(src, dst, size);
+            }
+        }
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
 //     fn float_add(&mut self, dst: WritableReg, lhs: Reg, rhs: Reg, size: OperandSize) -> Result<()> {
 //         Self::ensure_two_argument_form(&dst.to_reg(), &lhs)?;
