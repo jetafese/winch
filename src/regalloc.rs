@@ -18,7 +18,7 @@ use anyhow::{anyhow, Error, Result};
 /// moving Local and Register values in the stack to memory.
 /// This process ensures that whenever a register is requested,
 /// it is going to be available.
-pub(crate) struct RegAlloc {
+pub struct RegAlloc {
     /// The register set.
     regset: RegSet,
 }

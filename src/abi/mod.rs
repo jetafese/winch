@@ -104,7 +104,7 @@ pub(crate) fn vmctx_types<A: ABI>() -> [WasmValType; 2] {
 /// Trait implemented by a specific ISA and used to provide
 /// information about alignment, parameter passing, usage of
 /// specific registers, etc.
-pub(crate) trait ABI {
+pub trait ABI {
     /// The required stack alignment.
     fn stack_align() -> u8;
 
