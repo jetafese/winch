@@ -80,7 +80,7 @@ pub struct Memory {
 
 /// Value definition to be used within the shadow stack.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
-pub(crate) enum Val {
+pub enum Val {
     /// I32 Constant.
     I32(i32),
     /// I64 Constant.
@@ -271,7 +271,7 @@ impl Val {
 
 /// The shadow stack used for compilation.
 #[derive(Default, Debug)]
-pub(crate) struct Stack {
+pub struct Stack {
     // NB: The 64 is chosen arbitrarily. We can adjust as we see fit.
     inner: SmallVec<[Val; 64]>,
 }

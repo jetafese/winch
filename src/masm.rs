@@ -63,23 +63,6 @@ pub(crate) enum MulWideKind {
     Unsigned,
 }
 
-#[derive(Eq, PartialEq)]
-pub(crate) enum DivKind {
-    /// Signed division.
-    Signed,
-    /// Unsigned division.
-    Unsigned,
-}
-
-/// Remainder kind.
-#[derive(Copy, Clone)]
-pub(crate) enum RemKind {
-    /// Signed remainder.
-    Signed,
-    /// Unsigned remainder.
-    Unsigned,
-}
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum TruncKind {
     /// Saturating conversion. If the source value is greater than the maximum
@@ -171,22 +154,22 @@ pub enum RoundingMode {
     Zero,
 }
 
-// #[derive(Eq, PartialEq)]
-// pub(crate) enum DivKind {
-//     /// Signed division.
-//     Signed,
-//     /// Unsigned division.
-//     Unsigned,
-// }
+#[derive(Eq, PartialEq)]
+pub enum DivKind {
+    /// Signed division.
+    Signed,
+    /// Unsigned division.
+    Unsigned,
+}
 
-// /// Remainder kind.
-// #[derive(Copy, Clone)]
-// pub(crate) enum RemKind {
-//     /// Signed remainder.
-//     Signed,
-//     /// Unsigned remainder.
-//     Unsigned,
-// }
+/// Remainder kind.
+#[derive(Copy, Clone)]
+pub enum RemKind {
+    /// Signed remainder.
+    Signed,
+    /// Unsigned remainder.
+    Unsigned,
+}
 
 // impl RemKind {
 //     pub fn is_signed(&self) -> bool {
@@ -445,7 +428,7 @@ impl StackSlot {
 
 /// An abstraction over a register or immediate.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum RegImm {
+pub enum RegImm {
     /// A register.
     Reg(Reg),
     /// A tagged immediate argument.
@@ -477,7 +460,7 @@ impl From<Reg> for RegImm {
 
 /// An tagged representation of an immediate.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum Imm {
+pub enum Imm {
     /// I32 immediate.
     I32(u32),
     /// I64 immediate.
@@ -708,7 +691,7 @@ pub const TRUSTED_FLAGS: MemFlags = MemFlags::trusted();
 // /// This approach allows for a more general interface that can be restricted
 // /// where needed, in the case of architectures that use a two-argument form.
 
-pub(crate) trait MacroAssembler {
+pub trait MacroAssembler {
     /// The addressing mode.
     type Address: Copy + core::fmt::Debug;
 

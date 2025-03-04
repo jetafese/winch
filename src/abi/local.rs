@@ -28,7 +28,7 @@ enum Base {
 /// machine stack. A [LocalSlot] on the other hand gets created at the beginning
 /// of a function compilation and gets cleaned up at the end.
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct LocalSlot {
+pub struct LocalSlot {
     /// The offset of the local slot.
     pub offset: u32,
     /// The type contained by this local slot.

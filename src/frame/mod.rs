@@ -79,7 +79,7 @@ pub(crate) struct DefinedLocals {
 // }
 
 /// Frame handler abstraction.
-pub(crate) struct Frame<P: CodeGenPhase> {
+pub struct Frame<P: CodeGenPhase> {
     /// The size of the entire local area; the arguments plus the function defined locals.
     pub locals_size: u32,
 

@@ -34,7 +34,7 @@ use crate::{
 /// generation process. The code generation context should
 /// be generally used as the single entry point to access
 /// the compound functionality provided by its elements.
-pub(crate) struct CodeGenContext<'a, P: CodeGenPhase> {
+pub struct CodeGenContext<'a, P: CodeGenPhase> {
     /// The register allocator.
     pub regalloc: RegAlloc,
     /// The value stack.
