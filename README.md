@@ -27,6 +27,6 @@ At the moment, we expect to get unsat since none of the functions have a path th
 
 ## Docker
 
-There is a docker setup that can be accessed in `verify`. It can be built and run with the commands `docker build -t winch . --file Dockerfile` and `docker run -it winch` respectively. 
+There is a docker setup that can be accessed in `verify`. It can be built and run with the commands `docker build -t winch . --file verify/Dockerfile` and `docker run -it winch` respectively. 
 
 The `just` command can be used to run SeaHorn on the generated files. At the top level directory, run `just` to get a clean build and the verifier invoked on the general llvm-ir.
