@@ -7,9 +7,10 @@ use super::{
 };
 use anyhow::{anyhow, bail, Error, Result};
 
-use crate::{abi::LocalSlot, cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}}, masm::DivKind};
+use crate::{abi::LocalSlot, cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}},};
 use crate::masm::{
-    // DivKind, ExtendKind, FloatCmpKind, IntCmpKind, 
+    DivKind, IntCmpKind, 
+    // ExtendKind, FloatCmpKind, 
     MacroAssembler as Masm, SPOffset, StackSlot,
     // MulWideKind,
     OperandSize, RegImm, Imm as I, TRUSTED_FLAGS,
@@ -750,36 +751,36 @@ impl Masm for MacroAssembler {
 //         Ok(Address::offset(reg, offset))
 //     }
 
-//     fn cmp(&mut self, src1: Reg, src2: RegImm, size: OperandSize) -> Result<()> {
-//         match src2 {
-//             RegImm::Imm(imm) => {
-//                 if let Some(v) = imm.to_i32() {
-//                     self.asm.cmp_ir(src1, v, size);
-//                 } else {
-//                     let scratch = regs::scratch();
-//                     self.load_constant(&imm, writable!(scratch), size)?;
-//                     self.asm.cmp_rr(src1, scratch, size);
-//                 }
-//             }
-//             RegImm::Reg(src2) => {
-//                 self.asm.cmp_rr(src1, src2, size);
-//             }
-//         }
+    fn cmp(&mut self, src1: Reg, src2: RegImm, size: OperandSize) -> Result<()> {
+        match src2 {
+            RegImm::Imm(imm) => {
+                if let Some(v) = imm.to_i32() {
+                    self.asm.cmp_ir(src1, v, size);
+                } else {
+                    let scratch = regs::scratch();
+                    self.load_constant(&imm, writable!(scratch), size)?;
+                    self.asm.cmp_rr(src1, scratch, size);
+                }
+            }
+            RegImm::Reg(src2) => {
+                self.asm.cmp_rr(src1, src2, size);
+            }
+        }
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-//     fn cmp_with_set(
-//         &mut self,
-//         dst: WritableReg,
-//         src: RegImm,
-//         kind: IntCmpKind,
-//         size: OperandSize,
-//     ) -> Result<()> {
-//         self.cmp(dst.to_reg(), src, size)?;
-//         self.asm.setcc(kind, dst);
-//         Ok(())
-//     }
+    fn cmp_with_set(
+        &mut self,
+        dst: WritableReg,
+        src: RegImm,
+        kind: IntCmpKind,
+        size: OperandSize,
+    ) -> Result<()> {
+        self.cmp(dst.to_reg(), src, size)?;
+        self.asm.setcc(kind, dst);
+        Ok(())
+    }
 
 //     fn float_cmp_with_set(
 //         &mut self,
