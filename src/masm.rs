@@ -4,6 +4,7 @@ use crate::{cranelift_codegen::ir::TrapCode, reg::{Reg, WritableReg}};
 // use crate::abi::{self, align_to, scratch, LocalSlot};
 use crate::abi::LocalSlot;
 // use crate::codegen::{CodeGenContext, Emission, FuncEnv};
+use crate::codegen::{CodeGenContext, Emission};
 // use crate::isa::{
 //     reg::{writable, Reg, WritableReg},
 //     CallingConvention,
@@ -985,23 +986,23 @@ pub trait MacroAssembler {
 //         size: OperandSize,
 //     ) -> Result<()>;
 
-//     /// Perform division operation.
-//     /// Division is special in that some architectures have specific
-//     /// expectations regarding the location of the instruction
-//     /// arguments and regarding the location of the quotient /
-//     /// remainder. To free the caller from having to deal with the
-//     /// architecture specific constraints we give this function access
-//     /// to the code generation context, allowing each implementation
-//     /// to decide the lowering path.  For cases in which division is a
-//     /// unconstrained binary operation, the caller can decide to use
-//     /// the `CodeGenContext::i32_binop` or `CodeGenContext::i64_binop`
-//     /// functions.
-//     fn div(
-//         &mut self,
-//         context: &mut CodeGenContext<Emission>,
-//         kind: DivKind,
-//         size: OperandSize,
-//     ) -> Result<()>;
+    /// Perform division operation.
+    /// Division is special in that some architectures have specific
+    /// expectations regarding the location of the instruction
+    /// arguments and regarding the location of the quotient /
+    /// remainder. To free the caller from having to deal with the
+    /// architecture specific constraints we give this function access
+    /// to the code generation context, allowing each implementation
+    /// to decide the lowering path.  For cases in which division is a
+    /// unconstrained binary operation, the caller can decide to use
+    /// the `CodeGenContext::i32_binop` or `CodeGenContext::i64_binop`
+    /// functions.
+    fn div(
+        &mut self,
+        context: &mut CodeGenContext<Emission>,
+        kind: DivKind,
+        size: OperandSize,
+    ) -> Result<()>;
 
 //     /// Calculate remainder.
 //     fn rem(

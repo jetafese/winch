@@ -532,6 +532,11 @@ pub mod isa {
                 /// Bitwise exclusive OR.
                 Xor,
             }
+            #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+            pub enum DivSignedness {
+                Signed,
+                Unsigned,
+            }
 
             #[derive(Clone, Debug)]
             pub enum RegMem {
@@ -1017,6 +1022,14 @@ pub mod isa {
                 Movsd,
                 Movdqu,
             }
+            #[derive(Clone, Copy, Debug, PartialEq)]
+            /// Comparison operations.
+            pub enum CmpOpcode {
+                /// CMP instruction: compute `a - b` and set flags from result.
+                Cmp,
+                /// TEST instruction: compute `a & b` and set flags from result.
+                Test,
+            }
         }
         #[derive(Clone, Debug)]
         pub enum Inst {
@@ -1079,6 +1092,27 @@ pub mod isa {
                 op: args::SseOpcode,
                 src: args::XmmMem,
                 dst: args::WritableXmm,
+            },
+            CmpRmiR {
+                size: OperandSize,
+                opcode: args::CmpOpcode,
+                src1: args::Gpr,
+                src2: args::GprMemImm,
+            },
+            SignExtendData {
+                size: OperandSize,
+                src: args::Gpr,
+                dst: args::WritableGpr,
+            },
+            Div {
+                size: OperandSize,
+                sign: args::DivSignedness,
+                trap: TrapCode,
+                divisor: args::GprMem,
+                dividend_lo: args::Gpr,
+                dividend_hi: args::Gpr,
+                dst_quotient: args::WritableGpr,
+                dst_remainder: args::WritableGpr,
             },
         }
         pub mod x64_settings {

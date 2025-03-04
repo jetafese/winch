@@ -1,11 +1,10 @@
 //! Assembler library implementation for x64.
 
 use crate::cranelift_codegen::ir::{MemFlags, TrapCode};
-use crate::cranelift_codegen::isa::x64::args::{Amode, ExtMode, GprMem, RegMem, SseOpcode, SyntheticAmode, CC};
 use crate::{
     // isa::{reg::Reg, CallingConvention},
     isa::reg::Reg,
-    masm::OperandSize
+    masm::{OperandSize, DivKind}
 };
 use crate::cranelift_codegen::{
     ir::{
@@ -21,15 +20,14 @@ use crate::cranelift_codegen::{
         x64::{
             args::{
                 // self, 
-                AluRmiROpcode, 
-                // Amode, CmpOpcode, DivSignedness, ExtMode, 
-                FromWritableReg, Gpr, 
-                // GprMem, 
-                GprMemImm, 
-                // Imm8Gpr, Imm8Reg, RegMem, 
-                RegMemImm, XmmMem, Xmm, WritableGpr,
-                // ShiftKind as CraneliftShiftKind, SseOpcode, SyntheticAmode,
-                // WritableXmm, XmmMemAligned, CC,
+                AluRmiROpcode, Amode, CmpOpcode, 
+                DivSignedness, ExtMode, FromWritableReg, Gpr, 
+                GprMem, GprMemImm, 
+                // Imm8Gpr, Imm8Reg, 
+                RegMem, RegMemImm, XmmMem, Xmm, WritableGpr,
+                // ShiftKind as CraneliftShiftKind, 
+                SseOpcode, SyntheticAmode, CC,
+                // WritableXmm, XmmMemAligned,
             },
             // encoding::rex::{encode_modrm, RexFlags},
             x64_settings, EmitInfo, EmitState, Inst,
@@ -38,8 +36,9 @@ use crate::cranelift_codegen::{
     settings, 
     // CallInfo, 
     Final, MachBuffer, MachBufferFinalized, MachInstEmit, MachInstEmitState,
+    Writable,
     // MachLabel, 
-    // PatchRegion, RelocDistance, VCodeConstantData, VCodeConstants, Writable,
+    // PatchRegion, RelocDistance, VCodeConstantData, VCodeConstants,
 };
 
 use crate::isa::reg::WritableReg;
@@ -70,12 +69,12 @@ impl From<Reg> for RegMem {
     }
 }
 
-// impl From<Reg> for WritableGpr {
-//     fn from(reg: Reg) -> Self {
-//         let writable = Writable::from_reg(reg.into());
-//         WritableGpr::from_writable_reg(writable).expect("valid writable gpr")
-//     }
-// }
+impl From<Reg> for WritableGpr {
+    fn from(reg: Reg) -> Self {
+        let writable = Writable::from_reg(reg.into());
+        WritableGpr::from_writable_reg(writable).expect("valid writable gpr")
+    }
+}
 
 // impl From<Reg> for WritableXmm {
 //     fn from(reg: Reg) -> Self {
@@ -126,14 +125,14 @@ impl From<Reg> for Xmm {
 //     }
 // }
 
-// impl From<DivKind> for DivSignedness {
-//     fn from(kind: DivKind) -> DivSignedness {
-//         match kind {
-//             DivKind::Signed => DivSignedness::Signed,
-//             DivKind::Unsigned => DivSignedness::Unsigned,
-//         }
-//     }
-// }
+impl From<DivKind> for DivSignedness {
+    fn from(kind: DivKind) -> DivSignedness {
+        match kind {
+            DivKind::Signed => DivSignedness::Signed,
+            DivKind::Unsigned => DivSignedness::Unsigned,
+        }
+    }
+}
 
 // impl From<IntCmpKind> for CC {
 //     fn from(value: IntCmpKind) -> Self {
@@ -859,65 +858,65 @@ impl Assembler {
     //     });
     // }
 
-    // /// Signed/unsigned division.
-    // ///
-    // /// Emits a sequence of instructions to ensure the correctness of
-    // /// the division invariants.  This function assumes that the
-    // /// caller has correctly allocated the dividend as `(rdx:rax)` and
-    // /// accounted for the quotient to be stored in `rax`.
-    // pub fn div(&mut self, divisor: Reg, dst: (Reg, Reg), kind: DivKind, size: OperandSize) {
-    //     let trap = match kind {
-    //         // Signed division has two trapping conditions, integer overflow and
-    //         // divide-by-zero. Check for divide-by-zero explicitly and let the
-    //         // hardware detect overflow.
-    //         //
-    //         // The dividend is sign extended to initialize `rdx`.
-    //         DivKind::Signed => {
-    //             self.emit(Inst::CmpRmiR {
-    //                 size: size.into(),
-    //                 src1: divisor.into(),
-    //                 src2: GprMemImm::unwrap_new(RegMemImm::imm(0)),
-    //                 opcode: CmpOpcode::Cmp,
-    //             });
-    //             self.emit(Inst::TrapIf {
-    //                 cc: CC::Z,
-    //                 trap_code: TrapCode::INTEGER_DIVISION_BY_ZERO,
-    //             });
-    //             self.emit(Inst::SignExtendData {
-    //                 size: size.into(),
-    //                 src: dst.0.into(),
-    //                 dst: dst.1.into(),
-    //             });
-    //             TrapCode::INTEGER_OVERFLOW
-    //         }
+    /// Signed/unsigned division.
+    ///
+    /// Emits a sequence of instructions to ensure the correctness of
+    /// the division invariants.  This function assumes that the
+    /// caller has correctly allocated the dividend as `(rdx:rax)` and
+    /// accounted for the quotient to be stored in `rax`.
+    pub fn div(&mut self, divisor: Reg, dst: (Reg, Reg), kind: DivKind, size: OperandSize) {
+        let trap = match kind {
+            // Signed division has two trapping conditions, integer overflow and
+            // divide-by-zero. Check for divide-by-zero explicitly and let the
+            // hardware detect overflow.
+            //
+            // The dividend is sign extended to initialize `rdx`.
+            DivKind::Signed => {
+                self.emit(Inst::CmpRmiR {
+                    size: size.into(),
+                    src1: divisor.into(),
+                    src2: GprMemImm::unwrap_new(RegMemImm::imm(0)),
+                    opcode: CmpOpcode::Cmp,
+                });
+                self.emit(Inst::TrapIf {
+                    cc: CC::Z,
+                    trap_code: TrapCode::INTEGER_DIVISION_BY_ZERO,
+                });
+                self.emit(Inst::SignExtendData {
+                    size: size.into(),
+                    src: dst.0.into(),
+                    dst: dst.1.into(),
+                });
+                TrapCode::INTEGER_OVERFLOW
+            }
 
-    //         // Unsigned division only traps in one case, on divide-by-zero, so
-    //         // defer that to the trap opcode.
-    //         //
-    //         // The divisor_hi reg is initialized with zero through an
-    //         // xor-against-itself op.
-    //         DivKind::Unsigned => {
-    //             self.emit(Inst::AluRmiR {
-    //                 size: size.into(),
-    //                 op: AluRmiROpcode::Xor,
-    //                 src1: dst.1.into(),
-    //                 src2: dst.1.into(),
-    //                 dst: dst.1.into(),
-    //             });
-    //             TrapCode::INTEGER_DIVISION_BY_ZERO
-    //         }
-    //     };
-    //     self.emit(Inst::Div {
-    //         sign: kind.into(),
-    //         size: size.into(),
-    //         trap,
-    //         divisor: GprMem::unwrap_new(RegMem::reg(divisor.into())),
-    //         dividend_lo: dst.0.into(),
-    //         dividend_hi: dst.1.into(),
-    //         dst_quotient: dst.0.into(),
-    //         dst_remainder: dst.1.into(),
-    //     });
-    // }
+            // Unsigned division only traps in one case, on divide-by-zero, so
+            // defer that to the trap opcode.
+            //
+            // The divisor_hi reg is initialized with zero through an
+            // xor-against-itself op.
+            DivKind::Unsigned => {
+                self.emit(Inst::AluRmiR {
+                    size: size.into(),
+                    op: AluRmiROpcode::Xor,
+                    src1: dst.1.into(),
+                    src2: dst.1.into(),
+                    dst: dst.1.into(),
+                });
+                TrapCode::INTEGER_DIVISION_BY_ZERO
+            }
+        };
+        self.emit(Inst::Div {
+            sign: kind.into(),
+            size: size.into(),
+            trap,
+            divisor: GprMem::unwrap_new(RegMem::reg(divisor.into())),
+            dividend_lo: dst.0.into(),
+            dividend_hi: dst.1.into(),
+            dst_quotient: dst.0.into(),
+            dst_remainder: dst.1.into(),
+        });
+    }
 
     // /// Signed/unsigned remainder.
     // ///

@@ -46,7 +46,7 @@ mod regalloc2;
 mod target_lexicon;
 
 use cranelift_codegen::{ir::TrapCode, Writable};
-use masm::{MacroAssembler, RegImm};
+use masm::{DivKind, MacroAssembler, OperandSize, RegImm};
 use isa::reg::{self, writable, Reg};
 use regalloc2::PReg;
 use regset::RegBitSet;
@@ -95,6 +95,7 @@ fn visitors() {
         5 => visit_i64_sub(),
         6 => visit_i32_mul(),
         7 => visit_i64_mul(),
+        8 => visit_i32_div_s(),
         _ => (),
     }
 }
@@ -307,4 +308,28 @@ fn visit_i64_mul() {
         Ok(TypedReg::i64(dst))
     });
     assert(res.is_ok());
+}
+
+#[no_mangle]
+fn visit_i32_div_s() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let codegen_context = setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    let mut masm = masm_64.unwrap();
+    // SUT
+    // invariant: top value on stack can be const/reg, second value should be dst reg
+    let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
+    emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
+    let val = nondet_i64();
+    emission_context.stack.push(Val::I64(val));
+    let res = masm.div(&mut emission_context, DivKind::Signed, OperandSize::S32);
+    assert(res.is_ok());
+    emission_context.stack.peek().expect("value at stack top");
+    emission_context.stack.pop();
+    assert(emission_context.stack.inner().is_empty());
 }
