@@ -7,7 +7,7 @@ use super::{
 };
 use anyhow::{anyhow, bail, Error, Result};
 
-use crate::{abi::LocalSlot, cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}}};
+use crate::{abi::LocalSlot, cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}}, masm::DivKind};
 use crate::masm::{
     // DivKind, ExtendKind, FloatCmpKind, IntCmpKind, 
     MacroAssembler as Masm, SPOffset, StackSlot,
@@ -18,6 +18,7 @@ use crate::masm::{
 };
 
 use crate::reg::RegClass;
+use crate::codegen::{Emission, CodeGenContext};
 // use crate::{
 //     abi::{self, align_to, calculate_frame_adjustment, LocalSlot},
 //     codegen::{ptr_type_from_ptr_size, CodeGenContext, CodeGenError, Emission, FuncEnv},
@@ -673,33 +674,33 @@ impl Masm for MacroAssembler {
 //         Ok(())
 //     }
 
-//     fn div(
-//         &mut self,
-//         context: &mut CodeGenContext<Emission>,
-//         kind: DivKind,
-//         size: OperandSize,
-//     ) -> Result<()> {
-//         // Allocate rdx:rax.
-//         let rdx = context.reg(regs::rdx(), self)?;
-//         let rax = context.reg(regs::rax(), self)?;
+    fn div(
+        &mut self,
+        context: &mut CodeGenContext<Emission>,
+        kind: DivKind,
+        size: OperandSize,
+    ) -> Result<()> {
+        // Allocate rdx:rax.
+        let rdx = context.reg(regs::rdx(), self)?;
+        let rax = context.reg(regs::rax(), self)?;
 
-//         // Allocate the divisor, which can be any gpr.
-//         let divisor = context.pop_to_reg(self, None)?;
+        // Allocate the divisor, which can be any gpr.
+        let divisor = context.pop_to_reg(self, None)?;
 
-//         // Mark rax as allocatable.
-//         context.free_reg(rax);
-//         // Move the top value to rax.
-//         let rax = context.pop_to_reg(self, Some(rax))?;
-//         self.asm.div(divisor.into(), (rax.into(), rdx), kind, size);
+        // Mark rax as allocatable.
+        context.free_reg(rax);
+        // Move the top value to rax.
+        let rax = context.pop_to_reg(self, Some(rax))?;
+        self.asm.div(divisor.into(), (rax.into(), rdx), kind, size);
 
-//         // Free the divisor and rdx.
-//         context.free_reg(divisor);
-//         context.free_reg(rdx);
+        // Free the divisor and rdx.
+        context.free_reg(divisor);
+        context.free_reg(rdx);
 
-//         // Push the quotient.
-//         context.stack.push(rax.into());
-//         Ok(())
-//     }
+        // Push the quotient.
+        context.stack.push(rax.into());
+        Ok(())
+    }
 
 //     fn rem(
 //         &mut self,
