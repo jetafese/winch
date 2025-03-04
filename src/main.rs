@@ -327,6 +327,7 @@ fn visit_i32_div_s() {
     emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
     let val = nondet_i64();
     emission_context.stack.push(Val::I64(val));
+    // TODO: The function div is not sensitive to the operand size
     let res = masm.div(&mut emission_context, DivKind::Signed, OperandSize::S32);
     assert(res.is_ok());
     emission_context.stack.peek().expect("value at stack top");

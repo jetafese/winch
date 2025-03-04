@@ -421,9 +421,21 @@ pub mod isa {
 
         use args::CC;
 
-        use crate::{cranelift_codegen::{ir::TrapCode, settings}, masm::OperandSize};
+        use crate::cranelift_codegen::{ir::TrapCode, settings};
 
         pub mod args {
+            #[derive(Clone, Copy, Debug, PartialEq)]
+            pub enum OperandSize {
+                /// 8-bit.
+                Size8,
+                /// 16-bit.
+                Size16,
+                /// 32-bit.
+                Size32,
+                /// 64-bit.
+                Size64,
+            }
+
             use crate::cranelift_codegen::{ir::MemFlags, Reg, RegClass, Writable, MachLabel};
 
             #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1036,25 +1048,25 @@ pub mod isa {
             Nop0,
             Nop4,
             AluRmiR {
-                size: OperandSize,
+                size: args::OperandSize,
                 op: args::AluRmiROpcode,
                 src1: args::Gpr,
                 src2: args::GprMemImm,
                 dst: args::WritableGpr,
             },
             Imm {
-                dst_size: OperandSize,
+                dst_size: args::OperandSize,
                 simm64: u64,
                 dst: args::WritableGpr,
             },
             IMul {
-                size: OperandSize,
+                size: args::OperandSize,
                 src1: args::Gpr,
                 src2: args::GprMem,
                 dst: args::WritableGpr,
             },
             IMulImm {
-                size: OperandSize,
+                size: args::OperandSize,
                 src1: args::GprMem,
                 src2: i32,
                 dst: args::WritableGpr,
@@ -1064,7 +1076,7 @@ pub mod isa {
                 trap_code: TrapCode,
             },
             MovRR {
-                size: OperandSize,
+                size: args::OperandSize,
                 src: args::Gpr,
                 dst: args::WritableGpr,
             },
@@ -1084,7 +1096,7 @@ pub mod isa {
                 dst: args::WritableGpr,
             },
             MovRM {
-                size: OperandSize,
+                size: args::OperandSize,
                 src: args::Gpr,
                 dst: args::SyntheticAmode,
             },
@@ -1094,18 +1106,22 @@ pub mod isa {
                 dst: args::WritableXmm,
             },
             CmpRmiR {
-                size: OperandSize,
+                size: args::OperandSize,
                 opcode: args::CmpOpcode,
                 src1: args::Gpr,
                 src2: args::GprMemImm,
             },
+            Setcc {
+                cc: CC,
+                dst: args::WritableGpr,
+            },
             SignExtendData {
-                size: OperandSize,
+                size: args::OperandSize,
                 src: args::Gpr,
                 dst: args::WritableGpr,
             },
             Div {
-                size: OperandSize,
+                size: args::OperandSize,
                 sign: args::DivSignedness,
                 trap: TrapCode,
                 divisor: args::GprMem,

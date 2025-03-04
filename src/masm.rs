@@ -92,7 +92,7 @@ pub(crate) enum FloatCmpKind {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub(crate) enum IntCmpKind {
+pub enum IntCmpKind {
     /// Equal.
     Eq,
     /// Not equal.
@@ -1012,27 +1012,27 @@ pub trait MacroAssembler {
 //         size: OperandSize,
 //     ) -> Result<()>;
 
-//     /// Compares `src1` against `src2` for the side effect of setting processor
-//     /// flags.
-//     ///
-//     /// Note that `src1` is the left-hand-side of the comparison and `src2` is
-//     /// the right-hand-side, so if testing `a < b` then `src1 == a` and
-//     /// `src2 == b`
-//     fn cmp(&mut self, src1: Reg, src2: RegImm, size: OperandSize) -> Result<()>;
+    /// Compares `src1` against `src2` for the side effect of setting processor
+    /// flags.
+    ///
+    /// Note that `src1` is the left-hand-side of the comparison and `src2` is
+    /// the right-hand-side, so if testing `a < b` then `src1 == a` and
+    /// `src2 == b`
+    fn cmp(&mut self, src1: Reg, src2: RegImm, size: OperandSize) -> Result<()>;
 
-//     /// Compare src and dst and put the result in dst.
-//     /// This function will potentially emit a series of instructions.
-//     ///
-//     /// The initial value in `dst` is the left-hand-side of the comparison and
-//     /// the initial value in `src` is the right-hand-side of the comparison.
-//     /// That means for `a < b` then `dst == a` and `src == b`.
-//     fn cmp_with_set(
-//         &mut self,
-//         dst: WritableReg,
-//         src: RegImm,
-//         kind: IntCmpKind,
-//         size: OperandSize,
-//     ) -> Result<()>;
+    /// Compare src and dst and put the result in dst.
+    /// This function will potentially emit a series of instructions.
+    ///
+    /// The initial value in `dst` is the left-hand-side of the comparison and
+    /// the initial value in `src` is the right-hand-side of the comparison.
+    /// That means for `a < b` then `dst == a` and `src == b`.
+    fn cmp_with_set(
+        &mut self,
+        dst: WritableReg,
+        src: RegImm,
+        kind: IntCmpKind,
+        size: OperandSize,
+    ) -> Result<()>;
 
 //     /// Compare floats in src1 and src2 and put the result in dst.
 //     /// In x86, this will emit multiple instructions.

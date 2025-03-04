@@ -1,10 +1,11 @@
 //! Assembler library implementation for x64.
 
 use crate::cranelift_codegen::ir::{MemFlags, TrapCode};
+use crate::cranelift_codegen::isa::x64::args;
 use crate::{
     // isa::{reg::Reg, CallingConvention},
     isa::reg::Reg,
-    masm::{OperandSize, DivKind}
+    masm::{OperandSize, DivKind, IntCmpKind}
 };
 use crate::cranelift_codegen::{
     ir::{
@@ -113,17 +114,17 @@ impl From<Reg> for Xmm {
     }
 }
 
-// impl From<OperandSize> for args::OperandSize {
-//     fn from(size: OperandSize) -> Self {
-//         match size {
-//             OperandSize::S8 => Self::Size8,
-//             OperandSize::S16 => Self::Size16,
-//             OperandSize::S32 => Self::Size32,
-//             OperandSize::S64 => Self::Size64,
-//             s => panic!("Invalid operand size {s:?}"),
-//         }
-//     }
-// }
+impl From<OperandSize> for args::OperandSize {
+    fn from(size: OperandSize) -> Self {
+        match size {
+            OperandSize::S8 => Self::Size8,
+            OperandSize::S16 => Self::Size16,
+            OperandSize::S32 => Self::Size32,
+            OperandSize::S64 => Self::Size64,
+            s => panic!("Invalid operand size {s:?}"),
+        }
+    }
+}
 
 impl From<DivKind> for DivSignedness {
     fn from(kind: DivKind) -> DivSignedness {
@@ -134,22 +135,22 @@ impl From<DivKind> for DivSignedness {
     }
 }
 
-// impl From<IntCmpKind> for CC {
-//     fn from(value: IntCmpKind) -> Self {
-//         match value {
-//             IntCmpKind::Eq => CC::Z,
-//             IntCmpKind::Ne => CC::NZ,
-//             IntCmpKind::LtS => CC::L,
-//             IntCmpKind::LtU => CC::B,
-//             IntCmpKind::GtS => CC::NLE,
-//             IntCmpKind::GtU => CC::NBE,
-//             IntCmpKind::LeS => CC::LE,
-//             IntCmpKind::LeU => CC::BE,
-//             IntCmpKind::GeS => CC::NL,
-//             IntCmpKind::GeU => CC::NB,
-//         }
-//     }
-// }
+impl From<IntCmpKind> for CC {
+    fn from(value: IntCmpKind) -> Self {
+        match value {
+            IntCmpKind::Eq => CC::Z,
+            IntCmpKind::Ne => CC::NZ,
+            IntCmpKind::LtS => CC::L,
+            IntCmpKind::LtU => CC::B,
+            IntCmpKind::GtS => CC::NLE,
+            IntCmpKind::GtU => CC::NBE,
+            IntCmpKind::LeS => CC::LE,
+            IntCmpKind::LeU => CC::BE,
+            IntCmpKind::GeS => CC::NL,
+            IntCmpKind::GeU => CC::NB,
+        }
+    }
+}
 
 // impl From<ShiftKind> for CraneliftShiftKind {
 //     fn from(value: ShiftKind) -> Self {
@@ -1014,25 +1015,25 @@ impl Assembler {
         });
     }
 
-    // pub fn cmp_ir(&mut self, src1: Reg, imm: i32, size: OperandSize) {
-    //     let imm = RegMemImm::imm(imm as u32);
+    pub fn cmp_ir(&mut self, src1: Reg, imm: i32, size: OperandSize) {
+        let imm = RegMemImm::imm(imm as u32);
 
-    //     self.emit(Inst::CmpRmiR {
-    //         size: size.into(),
-    //         opcode: CmpOpcode::Cmp,
-    //         src1: src1.into(),
-    //         src2: GprMemImm::unwrap_new(imm),
-    //     });
-    // }
+        self.emit(Inst::CmpRmiR {
+            size: size.into(),
+            opcode: CmpOpcode::Cmp,
+            src1: src1.into(),
+            src2: GprMemImm::unwrap_new(imm),
+        });
+    }
 
-    // pub fn cmp_rr(&mut self, src1: Reg, src2: Reg, size: OperandSize) {
-    //     self.emit(Inst::CmpRmiR {
-    //         size: size.into(),
-    //         opcode: CmpOpcode::Cmp,
-    //         src1: src1.into(),
-    //         src2: src2.into(),
-    //     });
-    // }
+    pub fn cmp_rr(&mut self, src1: Reg, src2: Reg, size: OperandSize) {
+        self.emit(Inst::CmpRmiR {
+            size: size.into(),
+            opcode: CmpOpcode::Cmp,
+            src1: src1.into(),
+            src2: src2.into(),
+        });
+    }
 
     // /// Compares values in src1 and src2 and sets ZF, PF, and CF flags in EFLAGS
     // /// register.
@@ -1073,11 +1074,11 @@ impl Assembler {
     //     })
     // }
 
-    // /// Set value in dst to `0` or `1` based on flags in status register and
-    // /// [`CmpKind`].
-    // pub fn setcc(&mut self, kind: IntCmpKind, dst: WritableReg) {
-    //     self.setcc_impl(kind.into(), dst);
-    // }
+    /// Set value in dst to `0` or `1` based on flags in status register and
+    /// [`CmpKind`].
+    pub fn setcc(&mut self, kind: IntCmpKind, dst: WritableReg) {
+        self.setcc_impl(kind.into(), dst);
+    }
 
     // /// Set value in dst to `1` if parity flag in status register is set, `0`
     // /// otherwise.
@@ -1091,20 +1092,20 @@ impl Assembler {
     //     self.setcc_impl(CC::NP, dst);
     // }
 
-    // fn setcc_impl(&mut self, cc: CC, dst: WritableReg) {
-    //     // Clear the dst register or bits 1 to 31 may be incorrectly set.
-    //     // Don't use xor since it updates the status register.
-    //     self.emit(Inst::Imm {
-    //         dst_size: args::OperandSize::Size32, // Always going to be an i32 result.
-    //         simm64: 0,
-    //         dst: dst.map(Into::into),
-    //     });
-    //     // Copy correct bit from status register into dst register.
-    //     self.emit(Inst::Setcc {
-    //         cc,
-    //         dst: dst.map(Into::into),
-    //     });
-    // }
+    fn setcc_impl(&mut self, cc: CC, dst: WritableReg) {
+        // Clear the dst register or bits 1 to 31 may be incorrectly set.
+        // Don't use xor since it updates the status register.
+        self.emit(Inst::Imm {
+            dst_size: args::OperandSize::Size32, // Always going to be an i32 result.
+            simm64: 0,
+            dst: dst.map(Into::into),
+        });
+        // Copy correct bit from status register into dst register.
+        self.emit(Inst::Setcc {
+            cc,
+            dst: dst.map(Into::into),
+        });
+    }
 
     // /// Store the count of leading zeroes in src in dst.
     // /// Requires `has_lzcnt` flag.
