@@ -18,9 +18,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 # Add .cargo/bin to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# # Create a non-root user for development
-# RUN useradd -m -s /bin/bash rustdev && \
-# echo "rustdev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# install the just command runner
+# create ~/bin
+RUN mkdir -p ~/bin
+# download and extract just to ~/bin/just
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+# add `~/bin` to the paths that your shell searches for executables
+RUN export PATH="$PATH:$HOME/bin"
 
 # USER usea
 WORKDIR /home/usea
