@@ -20,11 +20,11 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # install the just command runner
 # create ~/bin
-RUN mkdir -p ~/bin
+RUN mkdir -p /root/bin
 # download and extract just to ~/bin/just
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /root/bin
 # add `~/bin` to the paths that your shell searches for executables
-RUN export PATH="$PATH:$HOME/bin"
+ENV PATH="/root/bin:$PATH"
 
 # USER usea
 WORKDIR /home/usea
