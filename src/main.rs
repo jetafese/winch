@@ -147,6 +147,15 @@ fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
 }
 
 #[no_mangle]
+fn setup_masm() -> isa::x64::masm::MacroAssembler {
+    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
+    let shared_flags = cranelift_codegen::settings::Flags::new();
+    let ptr_size = 8;
+    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
+    return masm_64.unwrap();
+}
+
+#[no_mangle]
 fn visit_i32_const() {
     // setup context
     let vmoffsets = VMOffsets::new();
@@ -172,11 +181,7 @@ fn visit_i32_add() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
@@ -196,11 +201,7 @@ fn visit_i64_add() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
@@ -220,11 +221,7 @@ fn visit_i32_sub() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
@@ -244,11 +241,7 @@ fn visit_i64_sub() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
@@ -268,11 +261,7 @@ fn visit_i32_mul() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
@@ -292,11 +281,7 @@ fn visit_i64_mul() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
@@ -316,11 +301,7 @@ fn visit_i32_div_s() {
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
     let mut emission_context = codegen_context.for_emission();
-    let isa_flags = cranelift_codegen::isa::x64::x64_settings::Flags::new();
-    let shared_flags = cranelift_codegen::settings::Flags::new();
-    let ptr_size = 8;
-    let masm_64 = isa::x64::masm::MacroAssembler::new(ptr_size, shared_flags, isa_flags);
-    let mut masm = masm_64.unwrap();
+    let mut masm = setup_masm();
     // SUT
     // invariant: top value on stack can be const/reg, second value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
