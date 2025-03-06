@@ -346,7 +346,7 @@ fn visit_cmp_ops() {
     };
     // call functions
     let v2 = nondet_u8();
-    let res = match v {
+    let res = match v2 {
         0 => {
             emission_context.i32_binop(&mut masm, |masm, dst, src, size| {
                 masm.cmp_with_set(writable!(dst), src, kind, size)?;
