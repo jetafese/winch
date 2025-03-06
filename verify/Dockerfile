@@ -1,6 +1,4 @@
 FROM seahorn/seahorn-llvm14:nightly
-# FROM rust:1.64-bullseye
-
 
 USER root
 
@@ -13,21 +11,22 @@ libssl-dev \
 sudo \
 && rm -rf /var/lib/apt/lists/*
 
+RUN echo "usea ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+USER usea
+WORKDIR /home/usea
+
 # Install rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 # Add .cargo/bin to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
+ENV PATH="/home/usea/.cargo/bin:${PATH}"
 
 # install the just command runner
-# create ~/bin
-RUN mkdir -p /root/bin
-# download and extract just to ~/bin/just
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /root/bin
-# add `~/bin` to the paths that your shell searches for executables
-ENV PATH="/root/bin:$PATH"
-
-# USER usea
-WORKDIR /home/usea
+# create /home/usea/bin
+RUN mkdir -p bin
+# download and extract just to /home/usea/bin/just
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to bin
+# add `/home/usea/bin` to the paths that your shell searches for executables
+ENV PATH="/home/usea/bin:$PATH"
 
 # Set Rust toolchain to nightly-2022-08-01
 RUN rustup install nightly-2022-08-01 && \
