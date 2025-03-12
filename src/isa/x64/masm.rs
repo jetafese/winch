@@ -1403,7 +1403,7 @@ impl TryFrom<WasmValType> for OperandSize {
         let ty = match ty {
             WasmValType::I32 => OperandSize::S32,
             WasmValType::I64 => OperandSize::S64,
-            WasmValType::V128 => OperandSize::S128,
+            // WasmValType::V128 => OperandSize::S128,
             WasmValType::Ref(rt) => {
                 match rt.heap_type {
                     // TODO: Hardcoded size, assuming 64-bit support only. Once
