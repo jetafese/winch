@@ -104,39 +104,39 @@ pub enum CallingConvention {
     Default,
 }
 
-// impl CallingConvention {
-//     /// Returns true if the current calling convention is `WindowsFastcall`.
-//     fn is_fastcall(&self) -> bool {
-//         match &self {
-//             CallingConvention::WindowsFastcall => true,
-//             _ => false,
-//         }
-//     }
+impl CallingConvention {
+    /// Returns true if the current calling convention is `WindowsFastcall`.
+    fn is_fastcall(&self) -> bool {
+        match &self {
+            CallingConvention::WindowsFastcall => true,
+            _ => false,
+        }
+    }
 
-//     /// Returns true if the current calling convention is `SystemV`.
-//     fn is_systemv(&self) -> bool {
-//         match &self {
-//             CallingConvention::SystemV => true,
-//             _ => false,
-//         }
-//     }
+    /// Returns true if the current calling convention is `SystemV`.
+    fn is_systemv(&self) -> bool {
+        match &self {
+            CallingConvention::SystemV => true,
+            _ => false,
+        }
+    }
 
-//     /// Returns true if the current calling convention is `AppleAarch64`.
-//     fn is_apple_aarch64(&self) -> bool {
-//         match &self {
-//             CallingConvention::AppleAarch64 => true,
-//             _ => false,
-//         }
-//     }
+    /// Returns true if the current calling convention is `AppleAarch64`.
+    fn is_apple_aarch64(&self) -> bool {
+        match &self {
+            CallingConvention::AppleAarch64 => true,
+            _ => false,
+        }
+    }
 
-//     /// Returns true if the current calling convention is `Default`.
-//     pub fn is_default(&self) -> bool {
-//         match &self {
-//             CallingConvention::Default => true,
-//             _ => false,
-//         }
-//     }
-// }
+    /// Returns true if the current calling convention is `Default`.
+    pub fn is_default(&self) -> bool {
+        match &self {
+            CallingConvention::Default => true,
+            _ => false,
+        }
+    }
+}
 
 // impl From<CallingConvention> for CallConv {
 //     fn from(value: CallingConvention) -> Self {
@@ -244,47 +244,47 @@ pub trait TargetIsa: Send + Sync {
 //     }
 // }
 
-// /// Per-class register environment.
-// pub(crate) struct RegClassEnv {
-//     /// Float register class limit.
-//     limit: u8,
-//     /// Float register class index.
-//     index: u8,
-// }
+/// Per-class register environment.
+pub(crate) struct RegClassEnv {
+    /// Float register class limit.
+    limit: u8,
+    /// Float register class index.
+    index: u8,
+}
 
-// /// Helper environment to track register assignment for Winch's default calling
-// /// convention.
-// pub(crate) struct RegIndexEnv {
-//     /// Int register environment.
-//     int: RegClassEnv,
-//     /// Float register environment.
-//     float: Option<RegClassEnv>,
-// }
+/// Helper environment to track register assignment for Winch's default calling
+/// convention.
+pub(crate) struct RegIndexEnv {
+    /// Int register environment.
+    int: RegClassEnv,
+    /// Float register environment.
+    float: Option<RegClassEnv>,
+}
 
-// impl RegIndexEnv {
-//     fn with_limits_per_class(int: u8, float: u8) -> Self {
-//         let int = RegClassEnv {
-//             limit: int,
-//             index: 0,
-//         };
+impl RegIndexEnv {
+    fn with_limits_per_class(int: u8, float: u8) -> Self {
+        let int = RegClassEnv {
+            limit: int,
+            index: 0,
+        };
 
-//         let float = RegClassEnv {
-//             limit: float,
-//             index: 0,
-//         };
+        let float = RegClassEnv {
+            limit: float,
+            index: 0,
+        };
 
-//         Self {
-//             int,
-//             float: Some(float),
-//         }
-//     }
+        Self {
+            int,
+            float: Some(float),
+        }
+    }
 
-//     fn with_absolute_limit(limit: u8) -> Self {
-//         let int = RegClassEnv { limit, index: 0 };
+    fn with_absolute_limit(limit: u8) -> Self {
+        let int = RegClassEnv { limit, index: 0 };
 
-//         Self { int, float: None }
-//     }
-// }
+        Self { int, float: None }
+    }
+}
 
 // impl RegIndexEnv {
 //     fn next_gpr(&mut self) -> Option<u8> {

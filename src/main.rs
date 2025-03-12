@@ -47,14 +47,15 @@ mod target_lexicon;
 
 use cranelift_codegen::{ir::TrapCode, Writable};
 use masm::{DivKind, IntCmpKind, MacroAssembler, OperandSize, RegImm};
-use isa::reg::{self, writable, Reg};
+use isa::{reg::{self, writable, Reg}, x64::abi::X64ABI};
 use regalloc2::PReg;
 use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_i64, nondet_u32, nondet_u8};
+use smallvec::SmallVec;
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 use stack::{Stack, TypedReg, Val};
 use frame::Frame;
-use wasmtime_environ::VMOffsets;
+use wasmtime_environ::{VMOffsets, WasmFuncType, WasmValType::*};
 
 use core::panic::PanicInfo;
 
@@ -69,8 +70,8 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 pub extern fn main() {
     let v = nondet_u8();
     match v {
-        0 => general(),
-        _ => visitors(),
+        _ => general(),
+        // _ => visitors(),
     }
 }
 
@@ -78,8 +79,8 @@ pub extern fn main() {
 fn general() {
     let v = nondet_u8();
     match v {
-        0 => masm_new(),
-        _ => checked_uadd(),
+        _ => masm_new(),
+        // _ => checked_uadd(),
     }
 }
 
@@ -130,7 +131,26 @@ fn checked_uadd() {
 fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
     // let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
-    let frame = Frame::new().unwrap();
+    let sig = WasmFuncType::new(
+        [I32, I64, I32, I64, I32, I32, I64, I32].into(),
+        [I32, I32, I32, I64, I32, I32, I64, I32].into(),
+    );
+
+    let abi_sig = X64ABI::sig(&sig, &isa::CallingConvention::Default);
+    // let abi_sig = wasm_sig::<abi::X64ABI>(&sig);
+
+    // let env = FuncEnv::new(
+    //     &vmoffsets,
+    //     translation,
+    //     types,
+    //     builtins,
+    //     self,
+    //     abi::X64ABI::ptr_type(),
+    // );
+    // let type_converter = TypeConverter::new(env.translation, env.types);
+    // let defined_locals =
+    //     DefinedLocals::new::<abi::X64ABI>(&type_converter, &mut body, validator)?;
+    let frame = Frame::new(abi_sig, defined_locals).unwrap();
 
     let gpr = RegBitSet::int(
         ALL_GPR.into(),

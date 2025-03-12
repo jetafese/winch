@@ -1,3 +1,4 @@
+use smallvec::SmallVec;
 
 pub const FUNCREF_INIT_BIT: usize = 1;
 pub const FUNCREF_MASK: usize = !FUNCREF_INIT_BIT;
@@ -115,8 +116,36 @@ pub const FUNCREF_MASK: usize = !FUNCREF_INIT_BIT;
 // #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 // pub struct TypeIndex(u32);
 
-// pub struct WasmFuncType {
-// }
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct WasmFuncType {
+    params: SmallVec<[WasmValType; 8]>,
+    // params: Box<[WasmValType]>,
+    non_i31_gc_ref_params_count: usize,
+    returns: SmallVec<[WasmValType; 8]>,
+    // returns: Box<[WasmValType]>,
+    non_i31_gc_ref_returns_count: usize,
+}
+
+impl WasmFuncType {
+    /// Creates a new function type from the provided `params` and `returns`.
+    #[inline]
+    pub fn new(params: SmallVec<[WasmValType; 8]>, returns: SmallVec<[WasmValType; 8]>) -> Self {
+        let non_i31_gc_ref_params_count = params
+            .iter()
+            .filter(|p| p.is_vmgcref_type_and_not_i31())
+            .count();
+        let non_i31_gc_ref_returns_count = returns
+            .iter()
+            .filter(|r| r.is_vmgcref_type_and_not_i31())
+            .count();
+        WasmFuncType {
+            params,
+            non_i31_gc_ref_params_count,
+            returns,
+            non_i31_gc_ref_returns_count,
+        }
+    }
+}
 
 /// WebAssembly reference type -- equivalent of `wasmparser`'s RefType
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -125,6 +154,35 @@ pub struct WasmRefType {
     pub nullable: bool,
     /// The heap type that this reference contains.
     pub heap_type: WasmHeapType,
+}
+
+impl WasmRefType {
+    /// Shorthand for `externref`
+    pub const EXTERNREF: WasmRefType = WasmRefType {
+        nullable: true,
+        heap_type: WasmHeapType::Extern,
+    };
+    /// Shorthand for `funcref`
+    pub const FUNCREF: WasmRefType = WasmRefType {
+        nullable: true,
+        heap_type: WasmHeapType::Func,
+    };
+
+    /// Is this a type that is represented as a `VMGcRef`?
+    #[inline]
+    pub fn is_vmgcref_type(&self) -> bool {
+        self.heap_type.is_vmgcref_type()
+    }
+
+    /// Is this a type that is represented as a `VMGcRef` and is additionally
+    /// not an `i31`?
+    ///
+    /// That is, is this a a type that actually refers to an object allocated in
+    /// a GC heap?
+    #[inline]
+    pub fn is_vmgcref_type_and_not_i31(&self) -> bool {
+        self.heap_type.is_vmgcref_type_and_not_i31()
+    }
 }
 
 /// WebAssembly value type -- equivalent of `wasmparser::ValType`.
@@ -139,10 +197,48 @@ pub enum WasmValType {
     // F32,
     // /// F64 type
     // F64,
-    /// V128 type
-    V128,
+    // /// V128 type
+    // V128,
     /// Reference type
     Ref(WasmRefType),
+}
+
+impl WasmValType {
+    /// Is this a type that is represented as a `VMGcRef`?
+    #[inline]
+    pub fn is_vmgcref_type(&self) -> bool {
+        match self {
+            WasmValType::Ref(r) => r.is_vmgcref_type(),
+            _ => false,
+        }
+    }
+
+    /// Is this a type that is represented as a `VMGcRef` and is additionally
+    /// not an `i31`?
+    ///
+    /// That is, is this a a type that actually refers to an object allocated in
+    /// a GC heap?
+    #[inline]
+    pub fn is_vmgcref_type_and_not_i31(&self) -> bool {
+        match self {
+            WasmValType::Ref(r) => r.is_vmgcref_type_and_not_i31(),
+            _ => false,
+        }
+    }
+
+    fn trampoline_type(&self) -> Self {
+        match self {
+            WasmValType::Ref(r) => WasmValType::Ref(WasmRefType {
+                nullable: true,
+                heap_type: r.heap_type.top().into(),
+            }),
+            WasmValType::I32
+            | WasmValType::I64 => *self,
+            // | WasmValType::F32
+            // | WasmValType::F64
+            // | WasmValType::V128 => *self,
+        }
+    }
 }
 
 /// WebAssembly heap type -- equivalent of `wasmparser`'s HeapType
@@ -164,6 +260,133 @@ pub enum WasmHeapType {
     Array,
     Struct,
     None,
+}
+
+/// A top heap type.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum WasmHeapTopType {
+    /// The common supertype of all external references.
+    Extern,
+    /// The common supertype of all internal references.
+    Any,
+    /// The common supertype of all function references.
+    Func,
+}
+
+/// A bottom heap type.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum WasmHeapBottomType {
+    /// The common subtype of all external references.
+    NoExtern,
+    /// The common subtype of all internal references.
+    None,
+    /// The common subtype of all function references.
+    NoFunc,
+}
+
+impl From<WasmHeapTopType> for WasmHeapType {
+    #[inline]
+    fn from(value: WasmHeapTopType) -> Self {
+        match value {
+            WasmHeapTopType::Extern => Self::Extern,
+            WasmHeapTopType::Any => Self::Any,
+            WasmHeapTopType::Func => Self::Func,
+        }
+    }
+}
+
+impl From<WasmHeapBottomType> for WasmHeapType {
+    #[inline]
+    fn from(value: WasmHeapBottomType) -> Self {
+        match value {
+            WasmHeapBottomType::NoExtern => Self::NoExtern,
+            WasmHeapBottomType::None => Self::None,
+            WasmHeapBottomType::NoFunc => Self::NoFunc,
+        }
+    }
+}
+
+impl WasmHeapType {
+    /// Is this a type that is represented as a `VMGcRef`?
+    #[inline]
+    pub fn is_vmgcref_type(&self) -> bool {
+        match self.top() {
+            // All `t <: (ref null any)` and `t <: (ref null extern)` are
+            // represented as `VMGcRef`s.
+            WasmHeapTopType::Any | WasmHeapTopType::Extern => true,
+
+            // All `t <: (ref null func)` are not.
+            WasmHeapTopType::Func => false,
+        }
+    }
+
+    /// Is this a type that is represented as a `VMGcRef` and is additionally
+    /// not an `i31`?
+    ///
+    /// That is, is this a a type that actually refers to an object allocated in
+    /// a GC heap?
+    #[inline]
+    pub fn is_vmgcref_type_and_not_i31(&self) -> bool {
+        self.is_vmgcref_type() && *self != Self::I31
+    }
+
+    /// Is this heap type the top of its type hierarchy?
+    #[inline]
+    pub fn is_top(&self) -> bool {
+        *self == Self::from(self.top())
+    }
+
+    /// Get this type's top type.
+    #[inline]
+    pub fn top(&self) -> WasmHeapTopType {
+        match self {
+            WasmHeapType::Extern | WasmHeapType::NoExtern => WasmHeapTopType::Extern,
+
+            WasmHeapType::Func 
+            // | WasmHeapType::ConcreteFunc(_) 
+            | WasmHeapType::NoFunc => {
+                WasmHeapTopType::Func
+            }
+
+            WasmHeapType::Any
+            | WasmHeapType::Eq
+            | WasmHeapType::I31
+            | WasmHeapType::Array
+            // | WasmHeapType::ConcreteArray(_)
+            | WasmHeapType::Struct
+            // | WasmHeapType::ConcreteStruct(_)
+            | WasmHeapType::None => WasmHeapTopType::Any,
+        }
+    }
+
+    /// Is this heap type the bottom of its type hierarchy?
+    #[inline]
+    pub fn is_bottom(&self) -> bool {
+        *self == Self::from(self.bottom())
+    }
+
+    /// Get this type's bottom type.
+    #[inline]
+    pub fn bottom(&self) -> WasmHeapBottomType {
+        match self {
+            WasmHeapType::Extern | WasmHeapType::NoExtern => WasmHeapBottomType::NoExtern,
+
+            WasmHeapType::Func 
+            // | WasmHeapType::ConcreteFunc(_) 
+            | WasmHeapType::NoFunc => {
+                WasmHeapBottomType::NoFunc
+            }
+
+            WasmHeapType::Any
+            | WasmHeapType::Eq
+            | WasmHeapType::I31
+            | WasmHeapType::Array
+            // | WasmHeapType::ConcreteArray(_)
+            | WasmHeapType::Struct
+            // | WasmHeapType::ConcreteStruct(_)
+            | WasmHeapType::None => WasmHeapBottomType::None,
+        }
+    }
 }
 
 // /// Helper macro to define a builtin type such as `BuiltinFunctionIndex` and
