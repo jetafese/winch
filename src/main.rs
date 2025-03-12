@@ -48,13 +48,14 @@ mod target_lexicon;
 use cranelift_codegen::{ir::TrapCode, Writable};
 use masm::{DivKind, IntCmpKind, MacroAssembler, OperandSize, RegImm};
 use isa::{reg::{self, writable, Reg}, x64::abi::X64ABI};
+use crate::abi::ABI;
 use regalloc2::PReg;
 use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_i64, nondet_u32, nondet_u8};
 use smallvec::SmallVec;
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 use stack::{Stack, TypedReg, Val};
-use frame::Frame;
+use frame::{DefinedLocals, Frame};
 use wasmtime_environ::{VMOffsets, WasmFuncType, WasmValType::*};
 
 use core::panic::PanicInfo;
@@ -150,7 +151,8 @@ fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
     // let type_converter = TypeConverter::new(env.translation, env.types);
     // let defined_locals =
     //     DefinedLocals::new::<abi::X64ABI>(&type_converter, &mut body, validator)?;
-    let frame = Frame::new(abi_sig, defined_locals).unwrap();
+    let defined_locals = DefinedLocals::new::<X64ABI>();
+    let frame = Frame::new::<X64ABI>(&abi_sig, &defined_locals.unwrap()).unwrap();
 
     let gpr = RegBitSet::int(
         ALL_GPR.into(),

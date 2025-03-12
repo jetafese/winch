@@ -38,45 +38,48 @@ impl DefinedLocalsRange {
 
 /// An abstraction to read the defined locals from the Wasm binary for a function.
 #[derive(Default)]
-pub(crate) struct DefinedLocals {
+pub struct DefinedLocals {
     /// The defined locals for a function.
     pub defined_locals: WasmLocals,
     /// The size of the defined locals.
     pub stack_size: u32,
 }
 
-// impl DefinedLocals {
-//     /// Compute the local slots for a Wasm function.
-//     pub fn new<A: ABI>(
-//         types: &impl TypeConvert,
-//         reader: &mut BinaryReader<'_>,
-//         validator: &mut FuncValidator<ValidatorResources>,
-//     ) -> Result<Self> {
-//         let mut next_stack: u32 = 0;
-//         // The first 32 bits of a Wasm binary function describe the number of locals.
-//         let local_count = reader.read_var_u32()?;
-//         let mut slots: WasmLocals = Default::default();
+impl DefinedLocals {
+    /// Compute the local slots for a Wasm function.
+    pub fn new<A: ABI>(
+        // nd_count: u32,  // number of locals
+        // buffer: [u8], // represents the binary reader
+        // types: &impl TypeConvert,
+        // reader: &mut BinaryReader<'_>,
+        // validator: &mut FuncValidator<ValidatorResources>,
+    ) -> Result<Self> {
+        let mut next_stack: u32 = 0;
+        // The first 32 bits of a Wasm binary function describe the number of locals.
+        // let local_count = nd_count;
+        // let local_count = reader.read_var_u32()?;
+        let mut slots: WasmLocals = Default::default();
 
-//         for _ in 0..local_count {
-//             let position = reader.original_position();
-//             let count = reader.read_var_u32()?;
-//             let ty = reader.read()?;
-//             validator.define_locals(position, count, ty)?;
+        // for _ in 0..local_count {
+        //     let position = reader.original_position();
+        //     let count = reader.read_var_u32()?;
+        //     let ty = reader.read()?;
+        //     validator.define_locals(position, count, ty)?;
 
-//             let ty = types.convert_valtype(ty);
-//             for _ in 0..count {
-//                 let ty_size = <A as ABI>::sizeof(&ty);
-//                 next_stack = align_to(next_stack, ty_size as u32) + (ty_size as u32);
-//                 slots.push(LocalSlot::new(ty, next_stack));
-//             }
-//         }
+        //     let ty = types.convert_valtype(ty);
+        //     for _ in 0..count {
+        //         let ty_size = <A as ABI>::sizeof(&ty);
+        //         next_stack = align_to(next_stack, ty_size as u32) + (ty_size as u32);
+        //         slots.push(LocalSlot::new(ty, next_stack));
+        //     }
+        // }
 
-//         Ok(Self {
-//             defined_locals: slots,
-//             stack_size: next_stack,
-//         })
-//     }
-// }
+        Ok(Self {
+            defined_locals: slots,
+            stack_size: next_stack,
+        })
+    }
+}
 
 /// Frame handler abstraction.
 pub struct Frame<P: CodeGenPhase> {

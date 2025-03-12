@@ -218,7 +218,7 @@ impl ABIOperand {
 
 /// Information about the [`ABIOperand`] information used in [`ABISig`].
 #[derive(Clone, Debug)]
-pub(crate) struct ABIOperands {
+pub struct ABIOperands {
     /// All the operands.
     pub inner: SmallVec<[ABIOperand; 6]>,
     // /// All the registers used as operands.
@@ -239,7 +239,7 @@ impl Default for ABIOperands {
 
 /// Machine stack location of the stack results.
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum RetArea {
+pub enum RetArea {
     /// Addressed from the stack pointer at the given offset.
     SP(SPOffset),
     /// The address of the results base is stored at a particular,
@@ -302,7 +302,7 @@ impl RetArea {
 
 /// ABI-specific representation of an [`ABISig`].
 #[derive(Clone, Debug, Default)]
-pub(crate) struct ABIResults {
+pub struct ABIResults {
     /// The result operands.
     operands: ABIOperands,
     /// The return area, if there are results on the stack.
@@ -325,12 +325,13 @@ impl ABIResults {
             return Self::default();
         }
 
-        type FoldTuple = (SmallVec<[ABIOperand; 6]>, HashSet<Reg>, u32);
+        type FoldTuple = (SmallVec<[ABIOperand; 6]>, SmallVec<[Reg; 6]>, u32);
 
         let fold_impl = |(mut operands, mut regs, stack_bytes): FoldTuple, arg| {
             let (operand, bytes) = map(arg, stack_bytes);
             if operand.is_reg() {
-                regs.insert(operand.unwrap_reg());
+                regs.push(operand.unwrap_reg());
+                // regs.insert(operand.unwrap_reg());
             }
             operands.push(operand);
             (operands, regs, bytes)
@@ -350,11 +351,13 @@ impl ABIResults {
                 .rev()
                 .fold((SmallVec::new(), 
                 // HashSet::with_capacity(1), 
+                SmallVec::new(),
                 0), fold_impl)
         } else {
             returns
                 .iter()
-                .fold((SmallVec::new(), 
+                .fold((SmallVec::new(),
+                SmallVec::new(),
                 // HashSet::with_capacity(1), 
                 0), fold_impl)
         };
@@ -449,7 +452,7 @@ impl ABIResults {
 
 /// ABI-specific representation of an [`ABISig`].
 #[derive(Debug, Clone, Default)]
-pub(crate) struct ABIParams {
+pub struct ABIParams {
     /// The param operands.
     operands: ABIOperands,
     /// Whether [`ABIParams`] contains an extra parameter for the stack
@@ -574,7 +577,7 @@ impl ABIParams {
 
 /// An ABI-specific representation of a function signature.
 #[derive(Debug, Clone)]
-pub(crate) struct ABISig {
+pub struct ABISig {
     /// Function parameters.
     pub params: ABIParams,
     /// Function result.
