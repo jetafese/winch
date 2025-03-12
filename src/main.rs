@@ -72,7 +72,7 @@ pub extern fn main() {
     let v = nondet_u8();
     match v {
         _ => general(),
-        // _ => visitors(),
+        _ => visitors(),
     }
 }
 
@@ -81,7 +81,7 @@ fn general() {
     let v = nondet_u8();
     match v {
         _ => masm_new(),
-        // _ => checked_uadd(),
+        _ => checked_uadd(),
     }
 }
 
