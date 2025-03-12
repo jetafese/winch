@@ -132,25 +132,14 @@ fn checked_uadd() {
 fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
     // let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
+
+    // TODO: needs a creative way to verify different signatures
     let sig = WasmFuncType::new(
         [I32, I64, I32, I64, I32, I32, I64, I32].into(),
         [I32, I32, I32, I64, I32, I32, I64, I32].into(),
     );
-
     let abi_sig = X64ABI::sig(&sig, &isa::CallingConvention::Default);
-    // let abi_sig = wasm_sig::<abi::X64ABI>(&sig);
-
-    // let env = FuncEnv::new(
-    //     &vmoffsets,
-    //     translation,
-    //     types,
-    //     builtins,
-    //     self,
-    //     abi::X64ABI::ptr_type(),
-    // );
-    // let type_converter = TypeConverter::new(env.translation, env.types);
-    // let defined_locals =
-    //     DefinedLocals::new::<abi::X64ABI>(&type_converter, &mut body, validator)?;
+    // TODO: should be able to pass values allocate nd locals
     let defined_locals = DefinedLocals::new::<X64ABI>();
     let frame = Frame::new::<X64ABI>(&abi_sig, &defined_locals.unwrap()).unwrap();
 
