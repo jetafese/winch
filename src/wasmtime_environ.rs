@@ -145,6 +145,17 @@ impl WasmFuncType {
             non_i31_gc_ref_returns_count,
         }
     }
+    /// Function params types.
+    #[inline]
+    pub fn params(&self) -> &[WasmValType] {
+        &self.params
+    }
+
+    /// Returns params types.
+    #[inline]
+    pub fn returns(&self) -> &[WasmValType] {
+        &self.returns
+    }
 }
 
 /// WebAssembly reference type -- equivalent of `wasmparser`'s RefType

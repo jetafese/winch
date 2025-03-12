@@ -147,7 +147,7 @@ impl X64ABI {
                     Self::int_reg_for(index_env.next_gpr(), call_conv, params_or_returns),
                     ty,
                 ),
-                ht => unimplemented!("Support for WasmHeapType: {ht}"),
+                ht => unimplemented!("Support for WasmHeapType:"),
             },
 
             ty @ (WasmValType::I32 | WasmValType::I64) => (
@@ -171,12 +171,13 @@ impl X64ABI {
             // in which case they use 16 bytes.
             // Stack slots for returns are type-size aligned.
             let next_stack = if params_or_returns == ParamsOrReturns::Params {
-                let alignment = if *ty == WasmValType::V128 {
-                    ty_size
-                } else {
-                    slot_size
-                };
-                align_to(stack_offset, alignment as u32) + (alignment as u32)
+                // let alignment = if *ty == WasmValType::V128 {
+                //     ty_size
+                // } else {
+                //     slot_size
+                // };
+                // align_to(stack_offset, alignment as u32) + (alignment as u32)
+                align_to(stack_offset, slot_size as u32) + (slot_size as u32)
             } else {
                 // For the default calling convention, we don't type-size align,
                 // given that results on the stack must match spills generated
@@ -195,45 +196,45 @@ impl X64ABI {
         })
     }
 
-    // fn int_reg_for(
-    //     index: Option<u8>,
-    //     call_conv: &CallingConvention,
-    //     params_or_returns: ParamsOrReturns,
-    // ) -> Option<Reg> {
-    //     todo!()
-    //     use ParamsOrReturns::*;
+    fn int_reg_for(
+        index: Option<u8>,
+        call_conv: &CallingConvention,
+        params_or_returns: ParamsOrReturns,
+    ) -> Option<Reg> {
+        // todo!()
+        use ParamsOrReturns::*;
 
-    //     let index = match index {
-    //         None => return None,
-    //         Some(index) => index,
-    //     };
+        let index = match index {
+            None => return None,
+            Some(index) => index,
+        };
 
-    //     if call_conv.is_fastcall() {
-    //         return match (index, params_or_returns) {
-    //             (0, Params) => Some(regs::rcx()),
-    //             (1, Params) => Some(regs::rdx()),
-    //             (2, Params) => Some(regs::r8()),
-    //             (3, Params) => Some(regs::r9()),
-    //             (0, Returns) => Some(regs::rax()),
-    //             _ => None,
-    //         };
-    //     }
+        if call_conv.is_fastcall() {
+            return match (index, params_or_returns) {
+                (0, Params) => Some(regs::rcx()),
+                (1, Params) => Some(regs::rdx()),
+                (2, Params) => Some(regs::r8()),
+                (3, Params) => Some(regs::r9()),
+                (0, Returns) => Some(regs::rax()),
+                _ => None,
+            };
+        }
 
-    //     if call_conv.is_systemv() || call_conv.is_default() {
-    //         return match (index, params_or_returns) {
-    //             (0, Params) => Some(regs::rdi()),
-    //             (1, Params) => Some(regs::rsi()),
-    //             (2, Params) => Some(regs::rdx()),
-    //             (3, Params) => Some(regs::rcx()),
-    //             (4, Params) => Some(regs::r8()),
-    //             (5, Params) => Some(regs::r9()),
-    //             (0, Returns) => Some(regs::rax()),
-    //             _ => None,
-    //         };
-    //     }
+        if call_conv.is_systemv() || call_conv.is_default() {
+            return match (index, params_or_returns) {
+                (0, Params) => Some(regs::rdi()),
+                (1, Params) => Some(regs::rsi()),
+                (2, Params) => Some(regs::rdx()),
+                (3, Params) => Some(regs::rcx()),
+                (4, Params) => Some(regs::r8()),
+                (5, Params) => Some(regs::r9()),
+                (0, Returns) => Some(regs::rax()),
+                _ => None,
+            };
+        }
 
-    //     None
-    // }
+        None
+    }
 
     // fn float_reg_for(
     //     index: Option<u8>,
