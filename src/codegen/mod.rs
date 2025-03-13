@@ -23,10 +23,10 @@
 
 mod context;
 pub(crate) use context::*;
-// mod env;
-// pub use env::*;
-// mod call;
-// pub(crate) use call::*;
+mod env;
+pub use env::*;
+mod call;
+pub(crate) use call::*;
 // mod control;
 // pub(crate) use control::*;
 // mod builtin;

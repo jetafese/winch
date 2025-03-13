@@ -96,9 +96,14 @@ pub const FUNCREF_MASK: usize = !FUNCREF_INIT_BIT;
 //     fn signed(self) -> Self::Signed;
 // }
 
-// /// Index type of a function (imported or defined) inside the WebAssembly module.
-// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-// pub struct FuncIndex(u32);
+/// Index type of a function (imported or defined) inside the WebAssembly module.
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct FuncIndex(u32);
+impl FuncIndex {
+    pub fn from_u32(x: u32) -> Self {
+        FuncIndex(x)
+    }
+}
 
 // /// Index type of a global variable (imported or defined) inside the WebAssembly module.
 // #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
@@ -112,9 +117,9 @@ pub const FUNCREF_MASK: usize = !FUNCREF_INIT_BIT;
 // #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 // pub struct TableIndex(u32);
 
-// /// Index type of a type (imported or defined) inside the WebAssembly module.
-// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-// pub struct TypeIndex(u32);
+/// Index type of a type (imported or defined) inside the WebAssembly module.
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct TypeIndex(u32);
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct WasmFuncType {

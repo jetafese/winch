@@ -5,17 +5,21 @@ use crate::{cranelift_codegen::ir::TrapCode, reg::{Reg, WritableReg}};
 use crate::abi::LocalSlot;
 // use crate::codegen::{CodeGenContext, Emission, FuncEnv};
 use crate::codegen::{CodeGenContext, Emission};
-// use crate::isa::{
-//     reg::{writable, Reg, WritableReg},
-//     CallingConvention,
-// };
+use crate::isa::{
+    // reg::{writable, Reg, WritableReg},
+    CallingConvention,
+};
 // use anyhow::Result;
-use crate::cranelift_codegen::ir::MemFlags;
-// use crate::cranelift_codegen::{
-//     binemit::CodeOffset,
-//     ir::{Endianness, LibCall, MemFlags, RelSourceLoc, SourceLoc, UserExternalNameRef},
-//     Final, MachBufferFinalized, MachLabel,
-// };
+use crate::cranelift_codegen::{
+    // binemit::CodeOffset,
+    ir::{
+        // Endianness, 
+        LibCall, MemFlags, 
+        // RelSourceLoc, SourceLoc, 
+        UserExternalNameRef
+    },
+    // Final, MachBufferFinalized, MachLabel,
+};
 // use std::{fmt::Debug, ops::Range};
 // use crate::wasmtime_environ::PtrSize;
 
@@ -526,34 +530,34 @@ impl Imm {
 //     Pinned,
 // }
 
-// /// The maximum number of context arguments currently used across the compiler.
-// pub(crate) const MAX_CONTEXT_ARGS: usize = 2;
+/// The maximum number of context arguments currently used across the compiler.
+pub(crate) const MAX_CONTEXT_ARGS: usize = 2;
 
-// /// Out-of-band special purpose arguments used for function call emission.
-// ///
-// /// We cannot rely on the value stack for these values given that inserting
-// /// register or memory values at arbitrary locations of the value stack has the
-// /// potential to break the stack ordering principle, which states that older
-// /// values must always precede newer values, effectively simulating the order of
-// /// values in the machine stack.
-// /// The [ContextArgs] are meant to be resolved at every callsite; in some cases
-// /// it might be possible to construct it early on, but given that it might
-// /// contain allocatable registers, it's preferred to construct it in
-// /// [FnCall::emit].
-// #[derive(Clone, Debug)]
-// pub(crate) enum ContextArgs {
-//     /// No context arguments required. This is used for libcalls that don't
-//     /// require any special context arguments. For example builtin functions
-//     /// that perform float calculations.
-//     None,
-//     /// A single context argument is required; the current pinned [VMcontext]
-//     /// register must be passed as the first argument of the function call.
-//     VMContext([VMContextLoc; 1]),
-//     /// The callee and caller context arguments are required. In this case, the
-//     /// callee context argument is usually stored into an allocatable register
-//     /// and the caller is always the current pinned [VMContext] pointer.
-//     CalleeAndCallerVMContext([VMContextLoc; MAX_CONTEXT_ARGS]),
-// }
+/// Out-of-band special purpose arguments used for function call emission.
+///
+/// We cannot rely on the value stack for these values given that inserting
+/// register or memory values at arbitrary locations of the value stack has the
+/// potential to break the stack ordering principle, which states that older
+/// values must always precede newer values, effectively simulating the order of
+/// values in the machine stack.
+/// The [ContextArgs] are meant to be resolved at every callsite; in some cases
+/// it might be possible to construct it early on, but given that it might
+/// contain allocatable registers, it's preferred to construct it in
+/// [FnCall::emit].
+#[derive(Clone, Debug)]
+pub(crate) enum ContextArgs {
+    /// No context arguments required. This is used for libcalls that don't
+    /// require any special context arguments. For example builtin functions
+    /// that perform float calculations.
+    None,
+    //TODO:  /// A single context argument is required; the current pinned [VMcontext]
+    // /// register must be passed as the first argument of the function call.
+    // VMContext([VMContextLoc; 1]),
+    // /// The callee and caller context arguments are required. In this case, the
+    // /// callee context argument is usually stored into an allocatable register
+    // /// and the caller is always the current pinned [VMContext] pointer.
+    // CalleeAndCallerVMContext([VMContextLoc; MAX_CONTEXT_ARGS]),
+}
 
 // impl ContextArgs {
 //     /// Construct an empty [ContextArgs].
@@ -594,32 +598,32 @@ impl Imm {
 //     }
 // }
 
-// #[derive(Copy, Clone, Debug)]
-// pub(crate) enum CalleeKind {
-//     /// A function call to a raw address.
-//     Indirect(Reg),
-//     /// A function call to a local function.
-//     Direct(UserExternalNameRef),
-//     /// Call to a well known LibCall.
-//     LibCall(LibCall),
-// }
+#[derive(Copy, Clone, Debug)]
+pub enum CalleeKind {
+    /// A function call to a raw address.
+    Indirect(Reg),
+    /// A function call to a local function.
+    Direct(UserExternalNameRef),
+    /// Call to a well known LibCall.
+    LibCall(LibCall),
+}
 
-// impl CalleeKind {
-//     /// Creates a callee kind from a register.
-//     pub fn indirect(reg: Reg) -> Self {
-//         Self::Indirect(reg)
-//     }
+impl CalleeKind {
+    /// Creates a callee kind from a register.
+    pub fn indirect(reg: Reg) -> Self {
+        Self::Indirect(reg)
+    }
 
-//     /// Creates a direct callee kind from a function name.
-//     pub fn direct(name: UserExternalNameRef) -> Self {
-//         Self::Direct(name)
-//     }
+    /// Creates a direct callee kind from a function name.
+    pub fn direct(name: UserExternalNameRef) -> Self {
+        Self::Direct(name)
+    }
 
-//     /// Creates a known callee kind from a libcall.
-//     pub fn libcall(call: LibCall) -> Self {
-//         Self::LibCall(call)
-//     }
-// }
+    /// Creates a known callee kind from a libcall.
+    pub fn libcall(call: LibCall) -> Self {
+        Self::LibCall(call)
+    }
+}
 
 // impl RegImm {
 //     /// Register constructor.
@@ -675,22 +679,22 @@ pub const TRUSTED_FLAGS: MemFlags = MemFlags::trusted();
 // /// We also ensure that the endianness is the right one for WebAssembly.
 // pub const UNTRUSTED_FLAGS: MemFlags = MemFlags::new().with_endianness(Endianness::Little);
 
-// /// Generic MacroAssembler interface used by the code generation.
-// ///
-// /// The MacroAssembler trait aims to expose an interface, high-level enough,
-// /// so that each ISA can provide its own lowering to machine code. For example,
-// /// for WebAssembly operators that don't have a direct mapping to a machine
-// /// a instruction, the interface defines a signature matching the WebAssembly
-// /// operator, allowing each implementation to lower such operator entirely.
-// /// This approach attributes more responsibility to the MacroAssembler, but frees
-// /// the caller from concerning about assembling the right sequence of
-// /// instructions at the operator callsite.
-// ///
-// /// The interface defaults to a three-argument form for binary operations;
-// /// this allows a natural mapping to instructions for RISC architectures,
-// /// that use three-argument form.
-// /// This approach allows for a more general interface that can be restricted
-// /// where needed, in the case of architectures that use a two-argument form.
+/// Generic MacroAssembler interface used by the code generation.
+///
+/// The MacroAssembler trait aims to expose an interface, high-level enough,
+/// so that each ISA can provide its own lowering to machine code. For example,
+/// for WebAssembly operators that don't have a direct mapping to a machine
+/// a instruction, the interface defines a signature matching the WebAssembly
+/// operator, allowing each implementation to lower such operator entirely.
+/// This approach attributes more responsibility to the MacroAssembler, but frees
+/// the caller from concerning about assembling the right sequence of
+/// instructions at the operator callsite.
+///
+/// The interface defaults to a three-argument form for binary operations;
+/// this allows a natural mapping to instructions for RISC architectures,
+/// that use three-argument form.
+/// This approach allows for a more general interface that can be restricted
+/// where needed, in the case of architectures that use a two-argument form.
 
 pub trait MacroAssembler {
     /// The addressing mode.
@@ -756,12 +760,12 @@ pub trait MacroAssembler {
 //     /// of the given register.
 //     fn address_at_reg(&self, reg: Reg, offset: u32) -> Result<Self::Address>;
 
-//     /// Emit a function call to either a local or external function.
-//     fn call(
-//         &mut self,
-//         stack_args_size: u32,
-//         f: impl FnMut(&mut Self) -> Result<(CalleeKind, CallingConvention)>,
-//     ) -> Result<u32>;
+    /// Emit a function call to either a local or external function.
+    fn call(
+        &mut self,
+        stack_args_size: u32,
+        f: impl FnMut(&mut Self) -> Result<(CalleeKind, CallingConvention)>,
+    ) -> Result<u32>;
 
     /// Get stack pointer offset.
     fn sp_offset(&self) -> Result<SPOffset>;

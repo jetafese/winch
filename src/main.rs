@@ -6,7 +6,7 @@
 #![feature(default_alloc_error_handler)]
 #![feature(lang_items)]
 
-use codegen::{CodeGenContext, Prologue};
+use codegen::{Callee, CodeGenContext, FnCall, FuncEnv, Prologue};
 use libc_alloc::LibcAlloc;
 
 #[global_allocator]
@@ -56,7 +56,7 @@ use smallvec::SmallVec;
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 use stack::{Stack, TypedReg, Val};
 use frame::{DefinedLocals, Frame};
-use wasmtime_environ::{VMOffsets, WasmFuncType, WasmValType::*};
+use wasmtime_environ::{FuncIndex, VMOffsets, WasmFuncType, WasmRefType, WasmValType::{self, *}};
 
 use core::panic::PanicInfo;
 
@@ -71,7 +71,7 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 pub extern fn main() {
     let v = nondet_u8();
     match v {
-        _ => general(),
+        0 => general(),
         _ => visitors(),
     }
 }
@@ -99,6 +99,7 @@ fn visitors() {
         7 => visit_i64_mul(),
         8 => visit_i32_div_s(),
         9 => visit_cmp_ops(),
+        10 => visit_call(),
         _ => (),
     }
 }
@@ -375,4 +376,20 @@ fn visit_cmp_ops() {
     emission_context.stack.peek().expect("value at stack top");
     emission_context.stack.pop();
     assert(emission_context.stack.inner().is_empty());
+}
+
+#[no_mangle]
+fn visit_call() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let codegen_context = setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let mut masm = setup_masm();
+    // SUT
+    let index = nondet_u32();
+    let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
+    let import = nondet_u32() % 2 == 0;
+    let func_index = FuncIndex::from_u32(index);
+    let callee = if import { Callee::Import(func_index) } else { Callee::Local(func_index) };
+    FnCall::emit(&mut env, &mut masm, &mut emission_context, callee);
 }
