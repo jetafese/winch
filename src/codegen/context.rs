@@ -514,13 +514,13 @@ impl<'a> CodeGenContext<'a, Emission> {
 //         Ok(())
 //     }
 
-//     /// Convenience wrapper around [`Self::spill_callback`].
-//     ///
-//     /// This function exists for cases in which triggering an unconditional
-//     /// spill is needed, like before entering control flow.
-//     pub fn spill<M: MacroAssembler>(&mut self, masm: &mut M) -> Result<()> {
-//         Self::spill_impl(&mut self.stack, &mut self.regalloc, &self.frame, masm)
-//     }
+    /// Convenience wrapper around [`Self::spill_callback`].
+    ///
+    /// This function exists for cases in which triggering an unconditional
+    /// spill is needed, like before entering control flow.
+    pub fn spill<M: MacroAssembler>(&mut self, masm: &mut M) -> Result<()> {
+        Self::spill_impl(&mut self.stack, &mut self.regalloc, &self.frame, masm)
+    }
 
 //     /// Prepares the compiler to emit an uncoditional jump to the given
 //     /// destination branch.  This process involves:
