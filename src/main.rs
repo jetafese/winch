@@ -80,7 +80,7 @@ pub extern fn main() {
 fn general() {
     let v = nondet_u8();
     match v {
-        _ => masm_new(),
+        0 => masm_new(),
         _ => checked_uadd(),
     }
 }
