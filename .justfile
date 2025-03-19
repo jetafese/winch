@@ -12,3 +12,7 @@ verify SEA='../seahorn/bin/sea' \
 
 clean:
 	cargo clean
+
+debug LLVM_FILE='`ls target/release/deps/winch_codegen*.ll`' \
+	SEA_LIB='../seahorn/lib/libsea-rt.a':
+	clang++ {{LLVM_FILE}} /tmp/winch/h.ll {{SEA_LIB}} -o exec.out
