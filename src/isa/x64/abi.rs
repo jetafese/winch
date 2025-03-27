@@ -1,4 +1,4 @@
-use super::regs;
+use super::regs::{self, r10};
 use crate::{
     abi::{align_to, ABIOperand, ABIParams, ABIResults, ABISig, ParamsOrReturns, ABI},
     isa::{reg::Reg, CallingConvention, RegIndexEnv},
@@ -117,20 +117,18 @@ impl ABI for X64ABI {
     }
 
     fn sizeof(ty: &WasmValType) -> u8 {
-        todo!()
+        match ty {
+            WasmValType::Ref(rt) => match rt.heap_type {
+                WasmHeapType::Func | WasmHeapType::Extern => Self::word_bytes(),
+                ht => unimplemented!("Support for WasmHeapType:"),
+            },
+            // WasmValType::F64 | 
+            WasmValType::I64 => Self::word_bytes(),
+            // WasmValType::F32 | 
+            WasmValType::I32 => Self::word_bytes() / 2,
+            // WasmValType::V128 => Self::word_bytes() * 2,
+        }
     }
-    
-    // fn sizeof(ty: &WasmValType) -> u8 {
-    //     match ty {
-    //         WasmValType::Ref(rt) => match rt.heap_type {
-    //             WasmHeapType::Func | WasmHeapType::Extern => Self::word_bytes(),
-    //             ht => unimplemented!("Support for WasmHeapType: {ht}"),
-    //         },
-    //         WasmValType::F64 | WasmValType::I64 => Self::word_bytes(),
-    //         WasmValType::F32 | WasmValType::I32 => Self::word_bytes() / 2,
-    //         WasmValType::V128 => Self::word_bytes() * 2,
-    //     }
-    // }
 }
 
 impl X64ABI {
