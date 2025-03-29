@@ -44,3 +44,5 @@ RUN sed -i '/libc/d' Cargo.toml
 RUN RUSTFLAGS=--emit=llvm-ir cargo build --release
 RUN rm -rf src
 RUN git reset --hard HEAD
+
+RUN rustup component add rust-src --toolchain nightly-2022-08-01-x86_64-unknown-linux-gnu
