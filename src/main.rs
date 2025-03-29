@@ -15,10 +15,6 @@ static ALLOCATOR: LibcAlloc = LibcAlloc;
 #[link(name="c")]
 extern "C" {}
 
-#[cfg(not(test))]
-#[lang = "eh_personality"]
-extern "C" fn rust_eh_personality() {}
-
 // /// Workaround for rustc bug: https://github.com/rust-lang/rust/issues/47493
 // ///
 // /// It shouldn't even be possible to reach this function, thanks to panic=abort,
@@ -68,12 +64,13 @@ fn panic(_panic: &PanicInfo<'_>) -> ! {
 
 #[allow(unused)]
 #[no_mangle]
-pub extern fn main() {
+pub extern fn main() -> i32 {
     let v = nondet_u8();
     match v {
         0 => general(),
         _ => visitors(),
     }
+    return 0;
 }
 
 #[no_mangle]
@@ -176,6 +173,9 @@ fn visit_i32_const() {
     // SUT
     let val = nondet_i32();
     codegen_context.stack.push(Val::i32(val));
+    codegen_context.stack.peek().expect("value at stack top");
+    codegen_context.stack.pop();
+    assert(codegen_context.stack.inner().is_empty());
 }
 
 #[no_mangle]
