@@ -1,6 +1,6 @@
 verify_options:
 # Optimization level
-  '-O1': ''
+  '-O3': ''
   # '-opaque-pointers': ''
 # 
 # PREPROCESSING
