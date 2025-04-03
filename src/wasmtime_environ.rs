@@ -123,10 +123,10 @@ pub struct TypeIndex(u32);
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct WasmFuncType {
-    params: SmallVec<[WasmValType; 8]>,
+    params: SmallVec<[WasmValType; 0]>,
     // params: Box<[WasmValType]>,
     // non_i31_gc_ref_params_count: usize,
-    returns: SmallVec<[WasmValType; 8]>,
+    returns: SmallVec<[WasmValType; 0]>,
     // returns: Box<[WasmValType]>,
     // non_i31_gc_ref_returns_count: usize,
 }
@@ -134,7 +134,7 @@ pub struct WasmFuncType {
 impl WasmFuncType {
     /// Creates a new function type from the provided `params` and `returns`.
     #[inline]
-    pub fn new(params: SmallVec<[WasmValType; 8]>, returns: SmallVec<[WasmValType; 8]>) -> Self {
+    pub fn new(params: SmallVec<[WasmValType; 0]>, returns: SmallVec<[WasmValType; 0]>) -> Self {
         // let non_i31_gc_ref_params_count = params
         //     .iter()
         //     .filter(|p| p.is_vmgcref_type_and_not_i31())
