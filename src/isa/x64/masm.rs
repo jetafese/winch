@@ -7,7 +7,7 @@ use super::{
 };
 use anyhow::{anyhow, bail, Error, Result};
 
-use crate::{abi::LocalSlot, cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}},};
+use crate::cranelift_codegen::{ir::MemFlags, isa::x64::args::{ExtMode, CC}};
 use crate::masm::{
     DivKind, IntCmpKind, 
     // ExtendKind, FloatCmpKind, 
@@ -20,11 +20,11 @@ use crate::masm::{
 
 use crate::reg::RegClass;
 use crate::codegen::{Emission, CodeGenContext};
-// use crate::{
-//     abi::{self, align_to, calculate_frame_adjustment, LocalSlot},
-//     codegen::{ptr_type_from_ptr_size, CodeGenContext, CodeGenError, Emission, FuncEnv},
-//     stack::{TypedReg, Val},
-// };
+use crate::{
+    abi::{self, align_to, calculate_frame_adjustment, LocalSlot},
+    // codegen::{ptr_type_from_ptr_size, CodeGenContext, CodeGenError, Emission, FuncEnv},
+    // stack::{TypedReg, Val},
+};
 // use crate::{
 //     abi::{vmctx, ABI},
 //     masm::{SPOffset, StackSlot},
@@ -175,7 +175,7 @@ impl Masm for MacroAssembler {
         if bytes == 0 {
             return Ok(());
         }
-
+        todo!();
         self.asm
             .sub_ir(bytes as i32, writable!(rsp()), OperandSize::S64);
         self.increment_sp(bytes);
@@ -271,20 +271,22 @@ impl Masm for MacroAssembler {
         stack_args_size: u32,
         mut load_callee: impl FnMut(&mut Self) -> Result<(CalleeKind, CallingConvention)>,
     ) -> Result<u32> {
-        todo!()
-        // let alignment: u32 = <Self::ABI as abi::ABI>::call_stack_align().into();
-        // let addend: u32 = <Self::ABI as abi::ABI>::arg_base_offset().into();
-        // let delta = calculate_frame_adjustment(self.sp_offset()?.as_u32(), addend, alignment);
-        // let aligned_args_size = align_to(stack_args_size, alignment);
-        // let total_stack = delta + aligned_args_size;
-        // self.reserve_stack(total_stack)?;
-        // let (callee, cc) = load_callee(self)?;
-        // match callee {
-        //     CalleeKind::Indirect(reg) => self.asm.call_with_reg(cc, reg),
-        //     CalleeKind::Direct(idx) => self.asm.call_with_name(cc, idx),
-        //     CalleeKind::LibCall(lib) => self.asm.call_with_lib(cc, lib, regs::scratch()),
-        // };
-        // Ok(total_stack)
+        // todo!() // visit_call + 1896
+        let alignment: u32 = <Self::ABI as abi::ABI>::call_stack_align().into();
+        let addend: u32 = <Self::ABI as abi::ABI>::arg_base_offset().into();
+        let delta = calculate_frame_adjustment(self.sp_offset()?.as_u32(), addend, alignment);
+        let aligned_args_size = align_to(stack_args_size, alignment);
+        let total_stack = delta + aligned_args_size;
+        self.reserve_stack(total_stack)?;
+        let (callee, cc) = load_callee(self)?;
+        match callee {
+            // CalleeKind::Indirect(reg) => self.asm.call_with_reg(cc, reg),
+            CalleeKind::Indirect(reg) => todo!(),
+            CalleeKind::Direct(idx) => self.asm.call_with_name(cc, idx),
+            // CalleeKind::LibCall(lib) => self.asm.call_with_lib(cc, lib, regs::scratch()),
+            CalleeKind::LibCall(lib) => todo!(),
+        };
+        Ok(total_stack)
     }
 
 //     fn load_ptr(&mut self, src: Self::Address, dst: WritableReg) -> Result<()> {

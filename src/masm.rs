@@ -521,14 +521,14 @@ impl Imm {
 //     }
 }
 
-// /// The location of the [VMcontext] used for function calls.
-// #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-// pub(crate) enum VMContextLoc {
-//     /// Dynamic, stored in the given register.
-//     Reg(Reg),
-//     /// The pinned [VMContext] register.
-//     Pinned,
-// }
+/// The location of the [VMcontext] used for function calls.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub(crate) enum VMContextLoc {
+    /// Dynamic, stored in the given register.
+    Reg(Reg),
+    /// The pinned [VMContext] register.
+    Pinned,
+}
 
 /// The maximum number of context arguments currently used across the compiler.
 pub(crate) const MAX_CONTEXT_ARGS: usize = 2;
@@ -550,26 +550,26 @@ pub(crate) enum ContextArgs {
     /// require any special context arguments. For example builtin functions
     /// that perform float calculations.
     None,
-    //TODO:  /// A single context argument is required; the current pinned [VMcontext]
-    // /// register must be passed as the first argument of the function call.
-    // VMContext([VMContextLoc; 1]),
+    /// A single context argument is required; the current pinned [VMcontext]
+    /// register must be passed as the first argument of the function call.
+    VMContext([VMContextLoc; 1]),
     // /// The callee and caller context arguments are required. In this case, the
-    // /// callee context argument is usually stored into an allocatable register
-    // /// and the caller is always the current pinned [VMContext] pointer.
-    // CalleeAndCallerVMContext([VMContextLoc; MAX_CONTEXT_ARGS]),
+    /// callee context argument is usually stored into an allocatable register
+    /// and the caller is always the current pinned [VMContext] pointer.
+    CalleeAndCallerVMContext([VMContextLoc; MAX_CONTEXT_ARGS]),
 }
 
-// impl ContextArgs {
-//     /// Construct an empty [ContextArgs].
-//     pub fn none() -> Self {
-//         Self::None
-//     }
+impl ContextArgs {
+    /// Construct an empty [ContextArgs].
+    pub fn none() -> Self {
+        Self::None
+    }
 
-//     /// Construct a [ContextArgs] declaring the usage of the pinned [VMContext]
-//     /// register as both the caller and callee context arguments.
-//     pub fn pinned_callee_and_caller_vmctx() -> Self {
-//         Self::CalleeAndCallerVMContext([VMContextLoc::Pinned, VMContextLoc::Pinned])
-//     }
+    /// Construct a [ContextArgs] declaring the usage of the pinned [VMContext]
+    /// register as both the caller and callee context arguments.
+    pub fn pinned_callee_and_caller_vmctx() -> Self {
+        Self::CalleeAndCallerVMContext([VMContextLoc::Pinned, VMContextLoc::Pinned])
+    }
 
 //     /// Construct a [ContextArgs] that declares the usage of the pinned
 //     /// [VMContext] register as the only context argument.
@@ -583,20 +583,20 @@ pub(crate) enum ContextArgs {
 //         Self::CalleeAndCallerVMContext([VMContextLoc::Reg(callee_vmctx), VMContextLoc::Pinned])
 //     }
 
-//     /// Get the length of the [ContextArgs].
-//     pub fn len(&self) -> usize {
-//         self.as_slice().len()
-//     }
+    /// Get the length of the [ContextArgs].
+    pub fn len(&self) -> usize {
+        self.as_slice().len()
+    }
 
-//     /// Get a slice of the context arguments.
-//     pub fn as_slice(&self) -> &[VMContextLoc] {
-//         match self {
-//             Self::None => &[],
-//             Self::VMContext(a) => a.as_slice(),
-//             Self::CalleeAndCallerVMContext(a) => a.as_slice(),
-//         }
-//     }
-// }
+    /// Get a slice of the context arguments.
+    pub fn as_slice(&self) -> &[VMContextLoc] {
+        match self {
+            Self::None => &[],
+            Self::VMContext(a) => a.as_slice(),
+            Self::CalleeAndCallerVMContext(a) => a.as_slice(),
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub enum CalleeKind {

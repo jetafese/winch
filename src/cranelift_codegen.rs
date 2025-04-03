@@ -349,6 +349,11 @@ pub mod ir {
 
     #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
     pub struct UserExternalNameRef(u32);
+    impl UserExternalNameRef {
+        pub fn new(name: u32) -> Self {
+            UserExternalNameRef(name)
+        }
+    }
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum ExternalName {
@@ -361,6 +366,18 @@ pub mod ir {
         LibCall(LibCall),
         /// A well-known symbol.
         KnownSymbol(),
+    }
+
+    impl Default for ExternalName {
+        fn default() -> Self {
+            Self::User(UserExternalNameRef::new(0))
+        }
+    }
+
+    impl ExternalName {
+        pub fn user(func_ref: UserExternalNameRef) -> Self {
+            Self::User(func_ref)
+        }
     }
 }
 
@@ -421,7 +438,7 @@ pub mod isa {
 
         use args::CC;
 
-        use crate::cranelift_codegen::{ir::TrapCode, settings};
+        use crate::cranelift_codegen::{ir::{ExternalName, TrapCode}, settings, CallInfo};
 
         pub mod args {
             #[derive(Clone, Copy, Debug, PartialEq)]
@@ -1129,6 +1146,10 @@ pub mod isa {
                 dividend_hi: args::Gpr,
                 dst_quotient: args::WritableGpr,
                 dst_remainder: args::WritableGpr,
+            },
+            CallKnown {
+                // info: BoxCallInfo,
+                info: CallInfo<ExternalName>,
             },
         }
         pub mod x64_settings {

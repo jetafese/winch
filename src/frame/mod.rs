@@ -241,11 +241,11 @@ impl Frame<Prologue> {
             .next()
             .map(|arg| Self::abi_arg_slot(&arg, &mut next_stack, arg_base_offset))
             .expect("Slot for VMContext");
-
-        let slots: WasmLocals = params_iter
-            .map(|arg| Self::abi_arg_slot(&arg, &mut next_stack, arg_base_offset))
-            .collect();
-
+        // SEA_TODO: map.collect() seems hard for seahorn to progress from
+        let slots: WasmLocals = SmallVec::new();
+        // let slots: WasmLocals = params_iter
+        //     .map(|arg| Self::abi_arg_slot(&arg, &mut next_stack, arg_base_offset))
+        //     .collect();
         Ok(([callee_vmctx, caller_vmctx], slots, next_stack))
     }
 
@@ -309,3 +309,5 @@ impl Frame<Emission> {
 //         Ok((slot.ty, masm.local_address(&slot)?))
 //     }
 }
+
+

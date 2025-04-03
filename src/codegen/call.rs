@@ -57,22 +57,14 @@
 //! └──────────────────────────────────────────────────┘ ------> Stack pointer when emitting the call
 
 use crate::{
-    // abi::{scratch, vmctx, ABIOperand, ABISig, RetArea},
-    codegen::{
+    abi::{scratch, vmctx, ABIOperand, ABISig, RetArea}, codegen::{
         // BuiltinFunction, BuiltinType, 
         Callee, CodeGenContext, 
         // CodeGenError, 
-        Emission},
-    masm::{
-        CalleeKind, ContextArgs, 
-        MacroAssembler, 
-        // MemMoveDirection, OperandSize, SPOffset,
+        Emission}, cranelift_codegen::ir::UserExternalNameRef, masm::{
+        CalleeKind, ContextArgs, MacroAssembler, OperandSize, SPOffset
         // VMContextLoc,
-    },
-    // reg::writable,
-    // reg::Reg,
-    // stack::Val,
-    FuncEnv,
+    }, writable, FuncEnv
 };
 use anyhow::{ensure, Result};
 use crate::wasmtime_environ::{FuncIndex, PtrSize, VMOffsets};
@@ -96,17 +88,18 @@ impl FnCall {
         context: &mut CodeGenContext<Emission>,
         callee: Callee,
     ) -> Result<()> {
-        todo!()
-        // let (kind, callee_context) = Self::lower(env, context.vmoffsets, &callee, context, masm)?;
+        let (kind, callee_context) = Self::lower(env, context.vmoffsets, &callee, context, masm)?;
+        let sig = env.callee_sig::<M::ABI>(&callee);
+        context.spill(masm)?;
+        let ret_area = Self::make_ret_area(&sig, masm)?;
+        let arg_stack_space = sig.params_stack_size();
+        let reserved_stack = masm.call(arg_stack_space, |masm| {
+            Self::assign(&sig, &callee_context, ret_area.as_ref(), context, masm)?;
+            Ok((kind, sig.call_conv))
+        })?;
 
-        // let sig = env.callee_sig::<M::ABI>(&callee);
-        // context.spill(masm)?;
-        // let ret_area = Self::make_ret_area(&sig, masm)?;
-        // let arg_stack_space = sig.params_stack_size();
-        // let reserved_stack = masm.call(arg_stack_space, |masm| {
-        //     Self::assign(&sig, &callee_context, ret_area.as_ref(), context, masm)?;
-        //     Ok((kind, sig.call_conv))
-        // })?;
+        Result::Ok(())
+
 
         // Self::cleanup(
         //     &sig,
@@ -119,22 +112,23 @@ impl FnCall {
         // )
     }
 
-    // /// Calculates the return area for the callee, if any.
-    // fn make_ret_area<M: MacroAssembler>(
-    //     callee_sig: &ABISig,
-    //     masm: &mut M,
-    // ) -> Result<Option<RetArea>> {
-    //     if callee_sig.has_stack_results() {
-    //         let base = masm.sp_offset()?.as_u32();
-    //         let end = base + callee_sig.results_stack_size();
-    //         if end > base {
-    //             masm.reserve_stack(end - base)?;
-    //         }
-    //         Ok(Some(RetArea::sp(SPOffset::from_u32(end))))
-    //     } else {
-    //         Ok(None)
-    //     }
-    // }
+    /// Calculates the return area for the callee, if any.
+    fn make_ret_area<M: MacroAssembler>(
+        callee_sig: &ABISig,
+        masm: &mut M,
+    ) -> Result<Option<RetArea>> {
+        Ok(None)
+        // if callee_sig.has_stack_results() {
+        //     let base = masm.sp_offset()?.as_u32();
+        //     let end = base + callee_sig.results_stack_size();
+        //     if end > base {
+        //         masm.reserve_stack(end - base)?;
+        //     }
+        //     Ok(Some(RetArea::sp(SPOffset::from_u32(end))))
+        // } else {
+        //     Ok(None)
+        // }
+    }
 
     /// Lowers the high-level [`Callee`] to a [`CalleeKind`] and
     /// [ContextArgs] pair which contains all the metadata needed for
@@ -148,20 +142,22 @@ impl FnCall {
         context: &mut CodeGenContext<Emission>,
         masm: &mut M,
     ) -> Result<(CalleeKind, ContextArgs)> {
-        todo!()
+        // SEA_TODO: limit path to Local function alone
         // let ptr = vmoffsets.ptr.size();
-        // match callee {
-        //     // Callee::Builtin(b) => Ok(Self::lower_builtin(env, b)),
-        //     Callee::Builtin(b) => todo!(),
-        //     Callee::FuncRef(_) => {
-        //         Self::lower_funcref(env.callee_sig::<M::ABI>(callee), ptr, context, masm)
-        //     }
-        //     Callee::Local(i) => Ok(Self::lower_local(env, *i)),
-        //     Callee::Import(i) => {
-        //         let sig = env.callee_sig::<M::ABI>(callee);
-        //         Self::lower_import(*i, sig, context, masm, vmoffsets)
-        //     }
-        // }
+        match callee {
+            // Callee::Builtin(b) => Ok(Self::lower_builtin(env, b)),
+            // Callee::Builtin(b) => todo!(),
+            Callee::FuncRef(_) => {
+                todo!()
+                // Self::lower_funcref(env.callee_sig::<M::ABI>(callee), ptr, context, masm)
+            }
+            Callee::Local(i) => Ok(Self::lower_local(env, *i)),
+            Callee::Import(i) => {
+                todo!()
+                // let sig = env.callee_sig::<M::ABI>(callee);
+                // Self::lower_import(*i, sig, context, masm, vmoffsets)
+            }
+        }
     }
 
     // /// Lowers a builtin function by loading its address to the next available
@@ -179,16 +175,20 @@ impl FnCall {
     //     }
     // }
 
-    // /// Lower  a local function to a [`CalleeKind`] and [ContextArgs] pair.
+    /// Lower  a local function to a [`CalleeKind`] and [ContextArgs] pair.
     // fn lower_local<P: PtrSize>(
-    //     env: &mut FuncEnv<P>,
-    //     index: FuncIndex,
-    // ) -> (CalleeKind, ContextArgs) {
-    //     (
-    //         CalleeKind::direct(env.name_wasm(index)),
-    //         ContextArgs::pinned_callee_and_caller_vmctx(),
-    //     )
-    // }
+    fn lower_local(
+        env: &mut FuncEnv,
+        index: FuncIndex,
+    ) -> (CalleeKind, ContextArgs) {
+        (
+            // SEA_TODO: fix the function kind and context args
+            // CalleeKind::direct(env.name_wasm(index)),
+            CalleeKind::direct(UserExternalNameRef::new(0)),
+            ContextArgs::pinned_callee_and_caller_vmctx(),
+            // ContextArgs::none(),
+        )
+    }
 
     // /// Lowers a function import by loading its address to the next available
     // /// register.
@@ -296,64 +296,69 @@ impl FnCall {
     //     Ok(())
     // }
 
-    // /// Assign arguments for the function call.
-    // fn assign<M: MacroAssembler>(
-    //     sig: &ABISig,
-    //     callee_context: &ContextArgs,
-    //     ret_area: Option<&RetArea>,
-    //     context: &mut CodeGenContext<Emission>,
-    //     masm: &mut M,
-    // ) -> Result<()> {
-    //     let arg_count = sig.params.len_without_retptr();
-    //     debug_assert!(arg_count >= callee_context.len());
-    //     let stack = &context.stack;
-    //     let stack_values = stack.peekn(arg_count - callee_context.len());
+    /// Assign arguments for the function call.
+    fn assign<M: MacroAssembler>(
+        sig: &ABISig,
+        callee_context: &ContextArgs,
+        ret_area: Option<&RetArea>,
+        context: &mut CodeGenContext<Emission>,
+        masm: &mut M,
+    ) -> Result<()> {
+        let arg_count = sig.params.len_without_retptr();
+        debug_assert!(arg_count >= callee_context.len());
+        // SEA_TODO: make debug assert explicit
+        if !(arg_count >= callee_context.len()) {
+            todo!()
+        }
+        let stack = &context.stack;
+        let stack_values = stack.peekn(arg_count - callee_context.len());
 
-    //     if callee_context.len() > 0 {
-    //         Self::assign_context_args(&sig, &callee_context, masm)?;
-    //     }
+        // SEA_TODO: no arguments for now
+        // if callee_context.len() > 0 {
+        //     Self::assign_context_args(&sig, &callee_context, masm)?;
+        // }
 
-    //     for (arg, val) in sig
-    //         .params_without_retptr()
-    //         .iter()
-    //         .skip(callee_context.len())
-    //         .zip(stack_values)
-    //     {
-    //         match arg {
-    //             &ABIOperand::Reg { reg, .. } => {
-    //                 context.move_val_to_reg(&val, reg, masm)?;
-    //             }
-    //             &ABIOperand::Stack { ty, offset, .. } => {
-    //                 let addr = masm.address_at_sp(SPOffset::from_u32(offset))?;
-    //                 let size: OperandSize = ty.try_into()?;
-    //                 let scratch = scratch!(M, &ty);
-    //                 context.move_val_to_reg(val, scratch, masm)?;
-    //                 masm.store(scratch.into(), addr, size)?;
-    //             }
-    //         }
-    //     }
+        // for (arg, val) in sig
+        //     .params_without_retptr()
+        //     .iter()
+        //     .skip(callee_context.len())
+        //     .zip(stack_values)
+        // {
+        //     match arg {
+        //         &ABIOperand::Reg { reg, .. } => {
+        //             context.move_val_to_reg(&val, reg, masm)?;
+        //         }
+        //         &ABIOperand::Stack { ty, offset, .. } => {
+        //             let addr = masm.address_at_sp(SPOffset::from_u32(offset))?;
+        //             let size: OperandSize = ty.try_into()?;
+        //             let scratch = scratch!(M, &ty);
+        //             context.move_val_to_reg(val, scratch, masm)?;
+        //             masm.store(scratch.into(), addr, size)?;
+        //         }
+        //     }
+        // }
 
-    //     if sig.has_stack_results() {
-    //         let operand = sig.params.unwrap_results_area_operand();
-    //         let base = ret_area.unwrap().unwrap_sp();
-    //         let addr = masm.address_from_sp(base)?;
+        // if sig.has_stack_results() {
+        //     let operand = sig.params.unwrap_results_area_operand();
+        //     let base = ret_area.unwrap().unwrap_sp();
+        //     let addr = masm.address_from_sp(base)?;
 
-    //         match operand {
-    //             &ABIOperand::Reg { ty, reg, .. } => {
-    //                 masm.load_addr(addr, writable!(reg), ty.try_into()?)?;
-    //             }
-    //             &ABIOperand::Stack { ty, offset, .. } => {
-    //                 let slot = masm.address_at_sp(SPOffset::from_u32(offset))?;
-    //                 // Don't rely on `ABI::scratch_for` as we always use
-    //                 // an int register as the return pointer.
-    //                 let scratch = scratch!(M);
-    //                 masm.load_addr(addr, writable!(scratch), ty.try_into()?)?;
-    //                 masm.store(scratch.into(), slot, ty.try_into()?)?;
-    //             }
-    //         }
-    //     }
-    //     Ok(())
-    // }
+        //     match operand {
+        //         &ABIOperand::Reg { ty, reg, .. } => {
+        //             masm.load_addr(addr, writable!(reg), ty.try_into()?)?;
+        //         }
+        //         &ABIOperand::Stack { ty, offset, .. } => {
+        //             let slot = masm.address_at_sp(SPOffset::from_u32(offset))?;
+        //             // Don't rely on `ABI::scratch_for` as we always use
+        //             // an int register as the return pointer.
+        //             let scratch = scratch!(M);
+        //             masm.load_addr(addr, writable!(scratch), ty.try_into()?)?;
+        //             masm.store(scratch.into(), slot, ty.try_into()?)?;
+        //         }
+        //     }
+        // }
+        Ok(())
+    }
 
     // /// Cleanup stack space, handle multiple results, and free registers after
     // /// emitting the call.

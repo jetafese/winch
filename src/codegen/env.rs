@@ -1,5 +1,5 @@
 use crate::{
-    // abi::{wasm_sig, ABISig, ABI},
+    abi::{wasm_sig, ABISig, ABI},
     // codegen::{control, BlockSig, BuiltinFunction, BuiltinFunctions, OperandSize},
     isa::TargetIsa,
 };
@@ -18,7 +18,7 @@ use crate::wasmtime_environ::{
     PtrSize,  
     // Table, TableIndex, TypeConvert,
     TypeIndex, 
-    VMOffsets, WasmHeapType, WasmValType,
+    VMOffsets, WasmHeapType, WasmValType, WasmFuncType
 };
 // use crate::cranelift_codegen::ir::{UserExternalName, UserExternalNameRef};
 
@@ -148,6 +148,7 @@ impl FuncEnv {
         // isa: &dyn TargetIsa,
         ptr_type: WasmValType,
     ) -> Self {
+        // SEA_TODO: highly modified function environment
         Self {
             vmoffsets,
             // translation,
@@ -312,34 +313,40 @@ impl FuncEnv {
 //         self.table_access_spectre_mitigation
 //     }
 
-//     pub(crate) fn callee_sig<'b, A>(&'b mut self, callee: &'b Callee) -> &'b ABISig
-//     where
-//         A: ABI,
-//     {
-//         match callee {
-//             Callee::Local(idx) | Callee::Import(idx) => {
-//                 let types = self.translation.get_types();
-//                 let types = types.as_ref();
-//                 let ty = types[types.core_function_at(idx.as_u32())].unwrap_func();
-//                 let val = || {
-//                     let converter = TypeConverter::new(self.translation, self.types);
-//                     let ty = converter.convert_func_type(&ty);
-//                     wasm_sig::<A>(&ty)
-//                 };
-//                 self.resolved_callees.entry(*idx).or_insert_with(val)
-//             }
-//             Callee::FuncRef(idx) => {
-//                 let val = || {
-//                     let sig_index = self.translation.module.types[*idx];
-//                     let ty = self.types[sig_index].unwrap_func();
-//                     let sig = wasm_sig::<A>(ty);
-//                     sig
-//                 };
-//                 self.resolved_sigs.entry(*idx).or_insert_with(val)
-//             }
-//             Callee::Builtin(b) => b.sig(),
-//         }
-//     }
+    pub(crate) fn callee_sig<'b, A>(&'b mut self, callee: &'b Callee) -> ABISig
+    where
+        A: ABI,
+    {
+        match callee {
+            Callee::Local(idx) | Callee::Import(idx) => {
+                // let types = self.translation.get_types();
+                // let types = types.as_ref();
+                // let ty = types[types.core_function_at(idx.as_u32())].unwrap_func();
+                // let val = || {
+                //     let converter = TypeConverter::new(self.translation, self.types);
+                //     let ty = converter.convert_func_type(&ty);
+                //     wasm_sig::<A>(&ty)
+                // };
+                // self.resolved_callees.entry(*idx).or_insert_with(val)
+                let sig = WasmFuncType::new(
+                    [].into(),
+                    [].into(),
+                );
+                wasm_sig::<A>(&sig)
+            }
+            Callee::FuncRef(idx) => {
+                todo!()
+                // let val = || {
+                //     let sig_index = self.translation.module.types[*idx];
+                //     let ty = self.types[sig_index].unwrap_func();
+                //     let sig = wasm_sig::<A>(ty);
+                //     sig
+                // };
+                // self.resolved_sigs.entry(*idx).or_insert_with(val)
+            }
+            // Callee::Builtin(b) => b.sig(),
+        }
+    }
 
 //     /// Creates a name to reference the `builtin` provided.
 //     pub fn name_builtin(&mut self, builtin: BuiltinFunctionIndex) -> UserExternalNameRef {
