@@ -87,15 +87,15 @@ macro_rules! scratch {
 pub(crate) use scratch;
 pub(crate) use vmctx;
 
-// /// Constructs an [ABISig] using Winch's ABI.
-// pub fn wasm_sig<A: ABI>(ty: &WasmFuncType) -> ABISig {
-//     // 6 is used semi-arbitrarily here, we can modify as we see fit.
-//     let mut params: SmallVec<[WasmValType; 6]> = SmallVec::new();
-//     params.extend_from_slice(&vmctx_types::<A>());
-//     params.extend_from_slice(ty.params());
+/// Constructs an [ABISig] using Winch's ABI.
+pub fn wasm_sig<A: ABI>(ty: &WasmFuncType) -> ABISig {
+    // 6 is used semi-arbitrarily here, we can modify as we see fit.
+    let mut params: SmallVec<[WasmValType; 0]> = SmallVec::new();
+    params.extend_from_slice(&vmctx_types::<A>());
+    params.extend_from_slice(ty.params());
 
-//     A::sig_from(&params, ty.returns(), &CallingConvention::Default)
-// }
+    A::sig_from(&params, ty.returns(), &CallingConvention::Default)
+}
 
 /// Returns the callee and caller [VMContext] types.
 pub(crate) fn vmctx_types<A: ABI>() -> [WasmValType; 2] {
@@ -117,7 +117,7 @@ pub trait ABI {
 
     /// Construct the ABI-specific signature from a WebAssembly
     /// function type.
-    // #[cfg(test)]
+    #[cfg(test)]
     fn sig(wasm_sig: &WasmFuncType, call_conv: &CallingConvention) -> ABISig {
         Self::sig_from(wasm_sig.params(), wasm_sig.returns(), call_conv)
     }
@@ -220,7 +220,7 @@ impl ABIOperand {
 #[derive(Clone, Debug)]
 pub struct ABIOperands {
     /// All the operands.
-    pub inner: SmallVec<[ABIOperand; 6]>,
+    pub inner: SmallVec<[ABIOperand; 0]>,
     // /// All the registers used as operands.
     // pub regs: HashSet<Reg>,
     /// Stack bytes used by the operands.
@@ -325,7 +325,7 @@ impl ABIResults {
             return Self::default();
         }
 
-        type FoldTuple = (SmallVec<[ABIOperand; 6]>, SmallVec<[Reg; 6]>, u32);
+        type FoldTuple = (SmallVec<[ABIOperand; 0]>, SmallVec<[Reg; 0]>, u32);
 
         let fold_impl = |(mut operands, mut regs, stack_bytes): FoldTuple, arg| {
             let (operand, bytes) = map(arg, stack_bytes);
@@ -345,21 +345,25 @@ impl ABIResults {
         // * Spilled memory values always precede register values
         // * Spilled values are stored from oldest to newest, matching their
         //   respective locations on the machine stack.
+
+        // SEA_TODO: enable support for iterators and folder
         let (mut operands, regs, bytes): FoldTuple = if call_conv.is_default() {
-            returns
-                .iter()
-                .rev()
-                .fold((SmallVec::new(), 
-                // HashSet::with_capacity(1), 
-                SmallVec::new(),
-                0), fold_impl)
+            // returns
+            //     .iter()
+            //     .rev()
+            //     .fold((SmallVec::new(), 
+            //     // HashSet::with_capacity(1), 
+            //     SmallVec::new(),
+            //     0), fold_impl)
+            (SmallVec::new(), SmallVec::new(), 0)
         } else {
-            returns
-                .iter()
-                .fold((SmallVec::new(),
-                SmallVec::new(),
-                // HashSet::with_capacity(1), 
-                0), fold_impl)
+            // returns
+            //     .iter()
+            //     .fold((SmallVec::new(),
+            //     SmallVec::new(),
+            //     // HashSet::with_capacity(1), 
+            //     0), fold_impl)
+            (SmallVec::new(), SmallVec::new(), 0)
         };
 
         // Similar to above, we reverse the result of the operands calculation
