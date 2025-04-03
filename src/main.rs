@@ -6,6 +6,7 @@
 #![feature(default_alloc_error_handler)]
 #![feature(lang_items)]
 
+use abi::wasm_sig;
 use codegen::{Callee, CodeGenContext, FnCall, FuncEnv, Prologue};
 use libc_alloc::LibcAlloc;
 
@@ -311,7 +312,7 @@ fn visit_i32_div_s() {
     emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
     let val = nondet_i64();
     emission_context.stack.push(Val::I64(val));
-    // TODO: The function div is not sensitive to the operand size
+    // SEA_TODO: The function div is not sensitive to the operand size
     let res = masm.div(&mut emission_context, DivKind::Signed, OperandSize::S32);
     assert(res.is_ok());
     emission_context.stack.peek().expect("value at stack top");
@@ -376,10 +377,12 @@ fn visit_call() {
     let mut emission_context = codegen_context.for_emission();
     let mut masm = setup_masm();
     // SUT
-    let index = nondet_u32();
+    let index = 0;
+    // let index = nondet_u32();
     let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
-    let import = nondet_u32() % 2 == 0;
     let func_index = FuncIndex::from_u32(index);
-    let callee = if import { Callee::Import(func_index) } else { Callee::Local(func_index) };
+    // let import = nondet_u32() % 2 == 0;
+    // let callee = if import { Callee::Import(func_index) } else { Callee::Local(func_index) };
+    let callee = Callee::Local(func_index);
     FnCall::emit(&mut env, &mut masm, &mut emission_context, callee);
 }

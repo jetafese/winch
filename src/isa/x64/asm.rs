@@ -3,18 +3,17 @@
 use crate::cranelift_codegen::ir::{MemFlags, TrapCode};
 use crate::cranelift_codegen::isa::x64::args;
 use crate::{
-    // isa::{reg::Reg, CallingConvention},
-    isa::reg::Reg,
+    isa::{reg::Reg, CallingConvention},
     masm::{OperandSize, DivKind, IntCmpKind}
 };
 use crate::cranelift_codegen::{
     ir::{
         // types, 
         ConstantPool, 
-        // ExternalName, LibCall, MemFlags, 
-        SourceLoc,
+        ExternalName, 
+        // LibCall, MemFlags, 
+        SourceLoc, UserExternalNameRef,
         // TrapCode,
-        // UserExternalNameRef,
     },
     isa::{
         // unwind::UnwindInst,
@@ -35,7 +34,7 @@ use crate::cranelift_codegen::{
         },
     },
     settings, 
-    // CallInfo, 
+    CallInfo, 
     Final, MachBuffer, MachBufferFinalized, MachInstEmit, MachInstEmitState,
     Writable,
     // MachLabel, 
@@ -1300,12 +1299,13 @@ impl Assembler {
     //     });
     // }
 
-    // /// Emit a call to a locally defined function through an index.
-    // pub fn call_with_name(&mut self, cc: CallingConvention, name: UserExternalNameRef) {
-    //     self.emit(Inst::CallKnown {
-    //         info: Box::new(CallInfo::empty(ExternalName::user(name), cc.into())),
-    //     });
-    // }
+    /// Emit a call to a locally defined function through an index.
+    pub fn call_with_name(&mut self, cc: CallingConvention, name: UserExternalNameRef) {
+        self.emit(Inst::CallKnown {
+            // info: Box::new(CallInfo::empty(ExternalName::user(name), cc.into())),
+            info: CallInfo::empty(ExternalName::user(name), cc.into()),
+        });
+    }
 
     // /// Emit a call to a well-known libcall.
     // pub fn call_with_lib(&mut self, cc: CallingConvention, lib: LibCall, dst: Reg) {

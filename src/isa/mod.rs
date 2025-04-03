@@ -7,6 +7,7 @@ pub(crate) mod reg;
 // use core::fmt::Formatter;
 // use crate::cranelift_codegen::isa::unwind::{UnwindInfo, UnwindInfoKind};
 // use crate::cranelift_codegen::isa::{CallConv, IsaBuilder};
+use crate::cranelift_codegen::isa::CallConv;
 // use crate::cranelift_codegen::settings;
 // use crate::cranelift_codegen::{Final, MachBufferFinalized, TextSectionBuilder};
 // use std::{
@@ -138,16 +139,16 @@ impl CallingConvention {
     }
 }
 
-// impl From<CallingConvention> for CallConv {
-//     fn from(value: CallingConvention) -> Self {
-//         match value {
-//             CallingConvention::SystemV => Self::SystemV,
-//             CallingConvention::AppleAarch64 => Self::AppleAarch64,
-//             CallingConvention::Default => Self::Winch,
-//             CallingConvention::WindowsFastcall => Self::WindowsFastcall,
-//         }
-//     }
-// }
+impl From<CallingConvention> for CallConv {
+    fn from(value: CallingConvention) -> Self {
+        match value {
+            CallingConvention::SystemV => Self::SystemV,
+            CallingConvention::AppleAarch64 => Self::AppleAarch64,
+            CallingConvention::Default => Self::Winch,
+            CallingConvention::WindowsFastcall => Self::WindowsFastcall,
+        }
+    }
+}
 
 /// A trait representing commonalities between the supported
 /// instruction set architectures.
