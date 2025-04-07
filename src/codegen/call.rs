@@ -57,16 +57,18 @@
 //! └──────────────────────────────────────────────────┘ ------> Stack pointer when emitting the call
 
 use crate::{
-    abi::{scratch, vmctx, ABIOperand, ABISig, RetArea}, codegen::{
-        // BuiltinFunction, BuiltinType, 
-        Callee, CodeGenContext, 
-        // CodeGenError, 
-        Emission}, cranelift_codegen::ir::UserExternalNameRef, masm::{
-        CalleeKind, ContextArgs, MacroAssembler, OperandSize, SPOffset
-        // VMContextLoc,
-    }, writable, FuncEnv
+    abi::{scratch, vmctx, ABIOperand, ABISig, RetArea},
+    codegen::{
+        // BuiltinFunction, BuiltinType, CodeGenError, 
+        Callee, CodeGenContext, Emission}, 
+    cranelift_codegen::ir::UserExternalNameRef, 
+    masm::{
+        CalleeKind, ContextArgs, MacroAssembler, OperandSize, SPOffset,
+        VMContextLoc, MemMoveDirection
+    }, 
+    stack::Val, writable, FuncEnv
 };
-use anyhow::{ensure, Result};
+use anyhow::{ensure, Error, Result};
 use crate::wasmtime_environ::{FuncIndex, PtrSize, VMOffsets};
 
 /// All the information needed to emit a function call.
@@ -98,18 +100,16 @@ impl FnCall {
             Ok((kind, sig.call_conv))
         })?;
 
-        Result::Ok(())
 
-
-        // Self::cleanup(
-        //     &sig,
-        //     &callee_context,
-        //     &kind,
-        //     reserved_stack,
-        //     ret_area,
-        //     masm,
-        //     context,
-        // )
+        Self::cleanup(
+            &sig,
+            &callee_context,
+            &kind,
+            reserved_stack,
+            ret_area,
+            masm,
+            context,
+        )
     }
 
     /// Calculates the return area for the callee, if any.
@@ -360,102 +360,102 @@ impl FnCall {
         Ok(())
     }
 
-    // /// Cleanup stack space, handle multiple results, and free registers after
-    // /// emitting the call.
-    // fn cleanup<M: MacroAssembler>(
-    //     sig: &ABISig,
-    //     callee_context: &ContextArgs,
-    //     callee_kind: &CalleeKind,
-    //     reserved_space: u32,
-    //     ret_area: Option<RetArea>,
-    //     masm: &mut M,
-    //     context: &mut CodeGenContext<Emission>,
-    // ) -> Result<()> {
-    //     // Free any registers holding any function references.
-    //     match callee_kind {
-    //         CalleeKind::Indirect(r) => context.free_reg(*r),
-    //         _ => {}
-    //     }
+    /// Cleanup stack space, handle multiple results, and free registers after
+    /// emitting the call.
+    fn cleanup<M: MacroAssembler>(
+        sig: &ABISig,
+        callee_context: &ContextArgs,
+        callee_kind: &CalleeKind,
+        reserved_space: u32,
+        ret_area: Option<RetArea>,
+        masm: &mut M,
+        context: &mut CodeGenContext<Emission>,
+    ) -> Result<()> {
+        // Free any registers holding any function references.
+        match callee_kind {
+            CalleeKind::Indirect(r) => context.free_reg(*r),
+            _ => {}
+        }
 
-    //     // Free any registers used as part of the [ContextArgs].
-    //     for loc in callee_context.as_slice() {
-    //         match loc {
-    //             VMContextLoc::Reg(r) => context.free_reg(*r),
-    //             _ => {}
-    //         }
-    //     }
-    //     // Deallocate the reserved space for stack arguments and for alignment,
-    //     // which was allocated last.
-    //     masm.free_stack(reserved_space)?;
+        // Free any registers used as part of the [ContextArgs].
+        for loc in callee_context.as_slice() {
+            match loc {
+                VMContextLoc::Reg(r) => context.free_reg(*r),
+                _ => {}
+            }
+        }
+        // Deallocate the reserved space for stack arguments and for alignment,
+        // which was allocated last.
+        masm.free_stack(reserved_space)?;
 
-    //     ensure!(
-    //         sig.params.len_without_retptr() >= callee_context.len(),
-    //         CodeGenError::vmcontext_arg_expected()
-    //     );
+        ensure!(
+            sig.params.len_without_retptr() >= callee_context.len(),
+            Error::msg("vmcontext_arg_expected")
+        );
 
-    //     // Drop params from value stack and calculate amount of machine stack
-    //     // space they consumed.
-    //     let mut stack_consumed = 0;
-    //     context.drop_last(
-    //         sig.params.len_without_retptr() - callee_context.len(),
-    //         |_regalloc, v| {
-    //             ensure!(
-    //                 v.is_mem() || v.is_const(),
-    //                 CodeGenError::unexpected_value_in_value_stack()
-    //             );
-    //             if let Val::Memory(mem) = v {
-    //                 stack_consumed += mem.slot.size;
-    //             }
-    //             Ok(())
-    //         },
-    //     )?;
+        // Drop params from value stack and calculate amount of machine stack
+        // space they consumed.
+        let mut stack_consumed = 0;
+        context.drop_last(
+            sig.params.len_without_retptr() - callee_context.len(),
+            |_regalloc, v| {
+                ensure!(
+                    v.is_mem() || v.is_const(),
+                    Error::msg("unexpected_value_in_value_stack")
+                );
+                if let Val::Memory(mem) = v {
+                    stack_consumed += mem.slot.size;
+                }
+                Ok(())
+            },
+        )?;
 
-    //     if let Some(ret_area) = ret_area {
-    //         if stack_consumed > 0 {
-    //             // Perform a memory move, by shuffling the result area to
-    //             // higher addresses. This is needed because the result area
-    //             // is located after any memory addresses located on the stack,
-    //             // and after spilled values consumed by the call.
-    //             let sp = ret_area.unwrap_sp();
-    //             let result_bytes = sig.results_stack_size();
-    //             ensure!(
-    //                 sp.as_u32() >= stack_consumed + result_bytes,
-    //                 CodeGenError::invalid_sp_offset(),
-    //             );
-    //             let dst = SPOffset::from_u32(sp.as_u32() - stack_consumed);
-    //             masm.memmove(sp, dst, result_bytes, MemMoveDirection::LowToHigh)?;
-    //         }
-    //     };
+        if let Some(ret_area) = ret_area {
+            if stack_consumed > 0 {
+                // Perform a memory move, by shuffling the result area to
+                // higher addresses. This is needed because the result area
+                // is located after any memory addresses located on the stack,
+                // and after spilled values consumed by the call.
+                let sp = ret_area.unwrap_sp();
+                let result_bytes = sig.results_stack_size();
+                ensure!(
+                    sp.as_u32() >= stack_consumed + result_bytes,
+                    Error::msg("invalid_sp_offset")
+                );
+                let dst = SPOffset::from_u32(sp.as_u32() - stack_consumed);
+                masm.memmove(sp, dst, result_bytes, MemMoveDirection::LowToHigh)?;
+            }
+        };
 
-    //     // Free the bytes consumed by the call.
-    //     masm.free_stack(stack_consumed)?;
+        // Free the bytes consumed by the call.
+        masm.free_stack(stack_consumed)?;
 
-    //     let mut calculated_ret_area = None;
+        let mut calculated_ret_area = None;
 
-    //     if let Some(area) = ret_area {
-    //         if stack_consumed > 0 {
-    //             // If there's a return area and stack space was consumed by the
-    //             // call, adjust the return area to be to the current stack
-    //             // pointer offset.
-    //             calculated_ret_area = Some(RetArea::sp(masm.sp_offset()?));
-    //         } else {
-    //             // Else if no stack space was consumed by the call, simply use
-    //             // the previously calculated area.
-    //             ensure!(
-    //                 area.unwrap_sp() == masm.sp_offset()?,
-    //                 CodeGenError::invalid_sp_offset()
-    //             );
-    //             calculated_ret_area = Some(area);
-    //         }
-    //     }
+        if let Some(area) = ret_area {
+            if stack_consumed > 0 {
+                // If there's a return area and stack space was consumed by the
+                // call, adjust the return area to be to the current stack
+                // pointer offset.
+                calculated_ret_area = Some(RetArea::sp(masm.sp_offset()?));
+            } else {
+                // Else if no stack space was consumed by the call, simply use
+                // the previously calculated area.
+                ensure!(
+                    area.unwrap_sp() == masm.sp_offset()?,
+                    Error::msg("invalid_sp_offset")
+                );
+                calculated_ret_area = Some(area);
+            }
+        }
 
-    //     // In the case of [Callee], there's no need to set the [RetArea] of the
-    //     // signature, as it's only used here to push abi results.
-    //     context.push_abi_results(&sig.results, masm, |_, _, _| calculated_ret_area)?;
-    //     // Reload the [VMContext] pointer into the corresponding pinned
-    //     // register. Winch currently doesn't have any callee-saved registers in
-    //     // the default ABI. So the callee might clobber the designated pinned
-    //     // register.
-    //     context.load_vmctx(masm)
-    // }
+        // In the case of [Callee], there's no need to set the [RetArea] of the
+        // signature, as it's only used here to push abi results.
+        context.push_abi_results(&sig.results, masm, |_, _, _| calculated_ret_area)?;
+        // Reload the [VMContext] pointer into the corresponding pinned
+        // register. Winch currently doesn't have any callee-saved registers in
+        // the default ABI. So the callee might clobber the designated pinned
+        // register.
+        context.load_vmctx(masm)
+    }
 }

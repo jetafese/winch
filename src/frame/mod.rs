@@ -280,21 +280,21 @@ impl Frame<Emission> {
             .unwrap_or_else(|| panic!(" Expected WebAssembly local at slot: {index}"))
     }
 
-//     /// Get the [`LocalSlot`] for a special local.
-//     ///
-//     /// # Panics
-//     /// This method panics if the index is not associated to a valid special
-//     /// local.
-//     pub fn get_special_local(&self, index: usize) -> &LocalSlot {
-//         self.special_locals
-//             .get(index)
-//             .unwrap_or_else(|| panic!(" Expected special local at slot: {index}"))
-//     }
+    /// Get the [`LocalSlot`] for a special local.
+    ///
+    /// # Panics
+    /// This method panics if the index is not associated to a valid special
+    /// local.
+    pub fn get_special_local(&self, index: usize) -> &LocalSlot {
+        self.special_locals
+            .get(index)
+            .unwrap_or_else(|| panic!(" Expected special local at slot: {index}"))
+    }
 
-//     /// Get the special [`LocalSlot`] for the `VMContext`.
-//     pub fn vmctx_slot(&self) -> &LocalSlot {
-//         self.get_special_local(0)
-//     }
+    /// Get the special [`LocalSlot`] for the `VMContext`.
+    pub fn vmctx_slot(&self) -> &LocalSlot {
+        self.get_special_local(0)
+    }
 
 //     /// Returns the address of the local at the given index.
 //     ///

@@ -2,11 +2,12 @@ use anyhow::Result;
 
 use crate::{cranelift_codegen::ir::TrapCode, reg::{Reg, WritableReg}};
 // use crate::abi::{self, align_to, scratch, LocalSlot};
-use crate::abi::LocalSlot;
+use crate::abi::{self, scratch, LocalSlot};
 // use crate::codegen::{CodeGenContext, Emission, FuncEnv};
 use crate::codegen::{CodeGenContext, Emission};
 use crate::isa::{
     // reg::{writable, Reg, WritableReg},
+    reg::writable,
     CallingConvention,
 };
 // use anyhow::Result;
@@ -60,6 +61,17 @@ impl OperandSize {
             Self::S128 => 16,
         }
     }
+
+        /// Create an [`OperandSize`]  from the given number of bytes.
+        pub fn from_bytes(bytes: u8) -> Self {
+            use OperandSize::*;
+            match bytes {
+                4 => S32,
+                8 => S64,
+                16 => S128,
+                _ => panic!("Invalid bytes {bytes} for OperandSize"),
+            }
+        }
 }
 
 #[derive(Eq, PartialEq)]
@@ -188,18 +200,19 @@ pub enum RemKind {
 //     Unsigned,
 // }
 
-// /// The direction to perform the memory move.
-// #[derive(Debug, Clone, Eq, PartialEq)]
-// pub(crate) enum MemMoveDirection {
-//     /// From high memory addresses to low memory addresses.
-//     /// Invariant: the source location is closer to the FP than the destination
-//     /// location, which will be closer to the SP.
-//     HighToLow,
-//     /// From low memory addresses to high memory addresses.
-//     /// Invariant: the source location is closer to the SP than the destination
-//     /// location, which will be closer to the FP.
-//     LowToHigh,
-// }
+/// The direction to perform the memory move.
+#[derive(Debug, Clone, Eq, PartialEq)]
+// SEA_TODO: we need to figure out how to codify these invariants
+pub enum MemMoveDirection {
+    /// From high memory addresses to low memory addresses.
+    /// Invariant: the source location is closer to the FP than the destination
+    /// location, which will be closer to the SP.
+    HighToLow,
+    /// From low memory addresses to high memory addresses.
+    /// Invariant: the source location is closer to the SP than the destination
+    /// location, which will be closer to the FP.
+    LowToHigh,
+}
 
 // /// Classifies how to treat float-to-int conversions.
 // #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -770,12 +783,12 @@ pub trait MacroAssembler {
     /// Get stack pointer offset.
     fn sp_offset(&self) -> Result<SPOffset>;
 
-//     /// Perform a stack store.
-//     fn store(&mut self, src: RegImm, dst: Self::Address, size: OperandSize) -> Result<()>;
+    /// Perform a stack store.
+    fn store(&mut self, src: RegImm, dst: Self::Address, size: OperandSize) -> Result<()>;
 
-//     /// Alias for `MacroAssembler::store` with the operand size corresponding
-//     /// to the pointer size of the target.
-//     fn store_ptr(&mut self, src: Reg, dst: Self::Address) -> Result<()>;
+    /// Alias for `MacroAssembler::store` with the operand size corresponding
+    /// to the pointer size of the target.
+    fn store_ptr(&mut self, src: Reg, dst: Self::Address) -> Result<()>;
 
 //     /// Perform a WebAssembly store.
 //     /// A WebAssembly store introduces several additional invariants compared to
@@ -806,9 +819,9 @@ pub trait MacroAssembler {
 //         kind: Option<ExtendKind>,
 //     ) -> Result<()>;
 
-//     /// Alias for `MacroAssembler::load` with the operand size corresponding
-//     /// to the pointer size of the target.
-//     fn load_ptr(&mut self, src: Self::Address, dst: WritableReg) -> Result<()>;
+    /// Alias for `MacroAssembler::load` with the operand size corresponding
+    /// to the pointer size of the target.
+    fn load_ptr(&mut self, src: Self::Address, dst: WritableReg) -> Result<()>;
 
 //     /// Loads the effective address into destination.
 //     fn load_addr(
@@ -828,64 +841,64 @@ pub trait MacroAssembler {
 //     fn cmov(&mut self, dst: WritableReg, src: Reg, cc: IntCmpKind, size: OperandSize)
 //         -> Result<()>;
 
-//     /// Performs a memory move of bytes from src to dest.
-//     /// Bytes are moved in blocks of 8 bytes, where possible.
-//     fn memmove(
-//         &mut self,
-//         src: SPOffset,
-//         dst: SPOffset,
-//         bytes: u32,
-//         direction: MemMoveDirection,
-//     ) -> Result<()> {
-//         match direction {
-//             MemMoveDirection::LowToHigh => debug_assert!(dst.as_u32() < src.as_u32()),
-//             MemMoveDirection::HighToLow => debug_assert!(dst.as_u32() > src.as_u32()),
-//         }
-//         // At least 4 byte aligned.
-//         debug_assert!(bytes % 4 == 0);
-//         let mut remaining = bytes;
-//         let word_bytes = <Self::ABI as abi::ABI>::word_bytes();
-//         let scratch = scratch!(Self);
+    /// Performs a memory move of bytes from src to dest.
+    /// Bytes are moved in blocks of 8 bytes, where possible.
+    fn memmove(
+        &mut self,
+        src: SPOffset,
+        dst: SPOffset,
+        bytes: u32,
+        direction: MemMoveDirection,
+    ) -> Result<()> {
+        match direction {
+            MemMoveDirection::LowToHigh => debug_assert!(dst.as_u32() < src.as_u32()),
+            MemMoveDirection::HighToLow => debug_assert!(dst.as_u32() > src.as_u32()),
+        }
+        // At least 4 byte aligned.
+        debug_assert!(bytes % 4 == 0);
+        let mut remaining = bytes;
+        let word_bytes = <Self::ABI as abi::ABI>::word_bytes();
+        let scratch = scratch!(Self);
 
-//         let mut dst_offs = dst.as_u32() - bytes;
-//         let mut src_offs = src.as_u32() - bytes;
+        let mut dst_offs = dst.as_u32() - bytes;
+        let mut src_offs = src.as_u32() - bytes;
 
-//         let word_bytes = word_bytes as u32;
-//         while remaining >= word_bytes {
-//             remaining -= word_bytes;
-//             dst_offs += word_bytes;
-//             src_offs += word_bytes;
+        let word_bytes = word_bytes as u32;
+        while remaining >= word_bytes {
+            remaining -= word_bytes;
+            dst_offs += word_bytes;
+            src_offs += word_bytes;
 
-//             self.load_ptr(
-//                 self.address_from_sp(SPOffset::from_u32(src_offs))?,
-//                 writable!(scratch),
-//             )?;
-//             self.store_ptr(
-//                 scratch.into(),
-//                 self.address_from_sp(SPOffset::from_u32(dst_offs))?,
-//             )?;
-//         }
+            self.load_ptr(
+                self.address_from_sp(SPOffset::from_u32(src_offs))?,
+                writable!(scratch),
+            )?;
+            self.store_ptr(
+                scratch.into(),
+                self.address_from_sp(SPOffset::from_u32(dst_offs))?,
+            )?;
+        }
 
-//         if remaining > 0 {
-//             let half_word = word_bytes / 2;
-//             let ptr_size = OperandSize::from_bytes(half_word as u8);
-//             debug_assert!(remaining == half_word);
-//             dst_offs += half_word;
-//             src_offs += half_word;
+        if remaining > 0 {
+            let half_word = word_bytes / 2;
+            let ptr_size = OperandSize::from_bytes(half_word as u8);
+            debug_assert!(remaining == half_word);
+            dst_offs += half_word;
+            src_offs += half_word;
 
-//             self.load(
-//                 self.address_from_sp(SPOffset::from_u32(src_offs))?,
-//                 writable!(scratch),
-//                 ptr_size,
-//             )?;
-//             self.store(
-//                 scratch.into(),
-//                 self.address_from_sp(SPOffset::from_u32(dst_offs))?,
-//                 ptr_size,
-//             )?;
-//         }
-//         Ok(())
-//     }
+            self.load(
+                self.address_from_sp(SPOffset::from_u32(src_offs))?,
+                writable!(scratch),
+                ptr_size,
+            )?;
+            self.store(
+                scratch.into(),
+                self.address_from_sp(SPOffset::from_u32(dst_offs))?,
+                ptr_size,
+            )?;
+        }
+        Ok(())
+    }
 
     /// Perform add operation.
     fn add(&mut self, dst: WritableReg, lhs: Reg, rhs: RegImm, size: OperandSize) -> Result<()>;

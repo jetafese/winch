@@ -5,14 +5,11 @@ use crate::wasmtime_environ::{VMOffsets, WasmHeapType, WasmValType};
 
 // use super::ControlStackFrame;
 use crate::{
-    // abi::{scratch, vmctx, ABIOperand, ABIResults, RetArea},
-    abi::scratch,
-    // codegen::{CodeGenError, CodeGenPhase, Emission, Prologue},
+    abi::{scratch, vmctx, ABIOperand, ABIResults, RetArea},
     codegen::{CodeGenPhase, Emission, Prologue},
     frame::Frame,
     isa::reg::RegClass,
-    // masm::{MacroAssembler, OperandSize, RegImm, SPOffset, ShiftKind, StackSlot},
-    masm::{MacroAssembler, OperandSize, RegImm},
+    masm::{MacroAssembler, OperandSize, RegImm, SPOffset, ShiftKind, StackSlot},
     isa::reg::{writable, Reg},
     regalloc::RegAlloc,
     stack::{Stack, TypedReg, Val},
@@ -491,28 +488,28 @@ impl<'a> CodeGenContext<'a, Emission> {
 //         Ok(())
 //     }
 
-//     /// Drops the last `n` elements of the stack, calling the provided
-//     /// function for each `n` stack value.
-//     /// The values are dropped in top-to-bottom order.
-//     pub fn drop_last<F>(&mut self, last: usize, mut f: F) -> Result<()>
-//     where
-//         F: FnMut(&mut RegAlloc, &Val) -> Result<()>,
-//     {
-//         if last > 0 {
-//             let len = self.stack.len();
-//             ensure!(last <= len, CodeGenError::unexpected_value_stack_index(),);
-//             let truncate = self.stack.len() - last;
-//             let stack_mut = self.stack.inner_mut();
+    /// Drops the last `n` elements of the stack, calling the provided
+    /// function for each `n` stack value.
+    /// The values are dropped in top-to-bottom order.
+    pub fn drop_last<F>(&mut self, last: usize, mut f: F) -> Result<()>
+    where
+        F: FnMut(&mut RegAlloc, &Val) -> Result<()>,
+    {
+        if last > 0 {
+            let len = self.stack.len();
+            ensure!(last <= len, Error::msg("unexpected_value_stack_index"),);
+            let truncate = self.stack.len() - last;
+            let stack_mut = self.stack.inner_mut();
 
-//             // Invoke the callback in top-to-bottom order.
-//             for v in stack_mut[truncate..].into_iter().rev() {
-//                 f(&mut self.regalloc, v)?
-//             }
-//             stack_mut.truncate(truncate);
-//         }
+            // Invoke the callback in top-to-bottom order.
+            for v in stack_mut[truncate..].into_iter().rev() {
+                f(&mut self.regalloc, v)?
+            }
+            stack_mut.truncate(truncate);
+        }
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
     /// Convenience wrapper around [`Self::spill_callback`].
     ///
@@ -587,49 +584,49 @@ impl<'a> CodeGenContext<'a, Emission> {
 //         Ok(())
 //     }
 
-//     /// Push the ABI representation of the results stack.
-//     pub fn push_abi_results<M, F>(
-//         &mut self,
-//         results: &ABIResults,
-//         masm: &mut M,
-//         mut calculate_ret_area: F,
-//     ) -> Result<()>
-//     where
-//         M: MacroAssembler,
-//         F: FnMut(&ABIResults, &mut CodeGenContext<Emission>, &mut M) -> Option<RetArea>,
-//     {
-//         let area = results
-//             .on_stack()
-//             .then(|| calculate_ret_area(&results, self, masm).unwrap());
+    /// Push the ABI representation of the results stack.
+    pub fn push_abi_results<M, F>(
+        &mut self,
+        results: &ABIResults,
+        masm: &mut M,
+        mut calculate_ret_area: F,
+    ) -> Result<()>
+    where
+        M: MacroAssembler,
+        F: FnMut(&ABIResults, &mut CodeGenContext<Emission>, &mut M) -> Option<RetArea>,
+    {
+        let area = results
+            .on_stack()
+            .then(|| calculate_ret_area(&results, self, masm).unwrap());
 
-//         for operand in results.operands().iter() {
-//             match operand {
-//                 ABIOperand::Reg { reg, ty, .. } => {
-//                     ensure!(
-//                         self.regalloc.reg_available(*reg),
-//                         CodeGenError::expected_register_to_be_available(),
-//                     );
+        for operand in results.operands().iter() {
+            match operand {
+                ABIOperand::Reg { reg, ty, .. } => {
+                    ensure!(
+                        self.regalloc.reg_available(*reg),
+                        Error::msg("expected_register_to_be_available"),
+                    );
+                    
+                    let typed_reg = TypedReg::new(*ty, self.reg(*reg, masm)?);
+                    self.stack.push(typed_reg.into());
+                }
+                ABIOperand::Stack { ty, offset, size } => match area.unwrap() {
+                    RetArea::SP(sp_offset) => {
+                        let slot =
+                        StackSlot::new(SPOffset::from_u32(sp_offset.as_u32() - offset), *size);
+                        self.stack.push(Val::mem(*ty, slot));
+                    }
+                    // This function is only expected to be called when dealing
+                    // with control flow and when calling functions; as a
+                    // callee, only [Self::pop_abi_results] is needed when
+                    // finalizing the function compilation.
+                    _ => bail!(Error::msg("unexpected_function_call")),
+                },
+            }
+        }
 
-//                     let typed_reg = TypedReg::new(*ty, self.reg(*reg, masm)?);
-//                     self.stack.push(typed_reg.into());
-//                 }
-//                 ABIOperand::Stack { ty, offset, size } => match area.unwrap() {
-//                     RetArea::SP(sp_offset) => {
-//                         let slot =
-//                             StackSlot::new(SPOffset::from_u32(sp_offset.as_u32() - offset), *size);
-//                         self.stack.push(Val::mem(*ty, slot));
-//                     }
-//                     // This function is only expected to be called when dealing
-//                     // with control flow and when calling functions; as a
-//                     // callee, only [Self::pop_abi_results] is needed when
-//                     // finalizing the function compilation.
-//                     _ => bail!(CodeGenError::unexpected_function_call()),
-//                 },
-//             }
-//         }
-
-//         Ok(())
-//     }
+        Ok(())
+    }
 
 //     /// Truncates the value stack to the specified target.
 //     /// This function is intended to only be used when restoring the code
@@ -646,14 +643,14 @@ impl<'a> CodeGenContext<'a, Emission> {
 //         }
 //     }
 
-//     /// Load the [VMContext] pointer into the designated pinned register.
-//     pub fn load_vmctx<M>(&mut self, masm: &mut M) -> Result<()>
-//     where
-//         M: MacroAssembler,
-//     {
-//         let addr = masm.local_address(&self.frame.vmctx_slot())?;
-//         masm.load_ptr(addr, writable!(vmctx!(M)))
-//     }
+    /// Load the [VMContext] pointer into the designated pinned register.
+    pub fn load_vmctx<M>(&mut self, masm: &mut M) -> Result<()>
+    where
+        M: MacroAssembler,
+    {
+        let addr = masm.local_address(&self.frame.vmctx_slot())?;
+        masm.load_ptr(addr, writable!(vmctx!(M)))
+    }
 
     /// Spill locals and registers to memory.
     // TODO: optimize the spill range;
