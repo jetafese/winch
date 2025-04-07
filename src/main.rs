@@ -377,12 +377,9 @@ fn visit_call() {
     let mut emission_context = codegen_context.for_emission();
     let mut masm = setup_masm();
     // SUT
-    let index = 0;
-    // let index = nondet_u32();
+    let index = nondet_u32();
     let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
     let func_index = FuncIndex::from_u32(index);
-    // let import = nondet_u32() % 2 == 0;
-    // let callee = if import { Callee::Import(func_index) } else { Callee::Local(func_index) };
     let callee = Callee::Local(func_index);
     FnCall::emit(&mut env, &mut masm, &mut emission_context, callee);
 }

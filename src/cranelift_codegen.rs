@@ -1117,6 +1117,11 @@ pub mod isa {
                 src: args::Gpr,
                 dst: args::SyntheticAmode,
             },
+            MovImmM {
+                size: args::OperandSize,
+                simm32: i32,
+                dst: args::SyntheticAmode,
+            },
             XmmUnaryRmRUnaligned {
                 op: args::SseOpcode,
                 src: args::XmmMem,

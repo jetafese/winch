@@ -333,22 +333,22 @@ impl Assembler {
         });
     }
 
-    // /// Immediate-to-memory move.
-    // pub fn mov_im(&mut self, src: i32, addr: &Address, size: OperandSize, flags: MemFlags) {
-    //     assert!(addr.is_offset());
-    //     let dst = Self::to_synthetic_amode(
-    //         addr,
-    //         &mut self.pool,
-    //         &mut self.constants,
-    //         &mut self.buffer,
-    //         flags,
-    //     );
-    //     self.emit(Inst::MovImmM {
-    //         size: size.into(),
-    //         simm32: src,
-    //         dst,
-    //     });
-    // }
+    /// Immediate-to-memory move.
+    pub fn mov_im(&mut self, src: i32, addr: &Address, size: OperandSize, flags: MemFlags) {
+        assert!(addr.is_offset());
+        let dst = Self::to_synthetic_amode(
+            addr,
+            &mut self.pool,
+            // &mut self.constants,
+            &mut self.buffer,
+            flags,
+        );
+        self.emit(Inst::MovImmM {
+            size: size.into(),
+            simm32: src,
+            dst,
+        });
+    }
 
     /// Immediate-to-register move.
     pub fn mov_ir(&mut self, imm: u64, dst: WritableReg, size: OperandSize) {

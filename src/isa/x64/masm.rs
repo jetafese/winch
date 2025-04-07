@@ -175,7 +175,7 @@ impl Masm for MacroAssembler {
         if bytes == 0 {
             return Ok(());
         }
-        todo!();
+
         self.asm
             .sub_ir(bytes as i32, writable!(rsp()), OperandSize::S64);
         self.increment_sp(bytes);
@@ -229,13 +229,13 @@ impl Masm for MacroAssembler {
 //         Ok(Address::offset(vmctx!(Self), offset))
 //     }
 
-//     fn store_ptr(&mut self, src: Reg, dst: Self::Address) -> Result<()> {
-//         self.store(src.into(), dst, self.ptr_size)
-//     }
+    fn store_ptr(&mut self, src: Reg, dst: Self::Address) -> Result<()> {
+        self.store(src.into(), dst, self.ptr_size)
+    }
 
-//     fn store(&mut self, src: RegImm, dst: Address, size: OperandSize) -> Result<()> {
-//         self.store_impl(src, dst, size, TRUSTED_FLAGS)
-//     }
+    fn store(&mut self, src: RegImm, dst: Address, size: OperandSize) -> Result<()> {
+        self.store_impl(src, dst, size, TRUSTED_FLAGS)
+    }
 
 //     fn wasm_store(&mut self, src: Reg, dst: Self::Address, size: OperandSize) -> Result<()> {
 //         self.store_impl(src.into(), dst, size, UNTRUSTED_FLAGS)
@@ -289,9 +289,9 @@ impl Masm for MacroAssembler {
         Ok(total_stack)
     }
 
-//     fn load_ptr(&mut self, src: Self::Address, dst: WritableReg) -> Result<()> {
-//         self.load(src, dst, self.ptr_size)
-//     }
+    fn load_ptr(&mut self, src: Self::Address, dst: WritableReg) -> Result<()> {
+        self.load(src, dst, self.ptr_size)
+    }
 
 //     fn load_addr(&mut self, src: Self::Address, dst: WritableReg, size: OperandSize) -> Result<()> {
 //         self.asm.lea(&src, dst, size);
@@ -1327,69 +1327,70 @@ impl MacroAssembler {
         Ok(())
     }
 
-//     /// A common implementation for stack stores.
-//     fn store_impl(
-//         &mut self,
-//         src: RegImm,
-//         dst: Address,
-//         size: OperandSize,
-//         flags: MemFlags,
-//     ) -> Result<()> {
-//         let _ = match src {
-//             RegImm::Imm(imm) => match imm {
-//                 I::I32(v) => self.asm.mov_im(v as i32, &dst, size, flags),
-//                 I::I64(v) => match v.try_into() {
-//                     Ok(v) => self.asm.mov_im(v, &dst, size, flags),
-//                     Err(_) => {
-//                         // If the immediate doesn't sign extend, use a scratch
-//                         // register.
-//                         let scratch = regs::scratch();
-//                         self.asm.mov_ir(v, writable!(scratch), size);
-//                         self.asm.mov_rm(scratch, &dst, size, flags);
-//                     }
-//                 },
-//                 I::F32(v) => {
-//                     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
-//                     let float_scratch = regs::scratch_xmm();
-//                     // Always trusted, since we are loading the constant from
-//                     // the constant pool.
-//                     self.asm
-//                         .xmm_mov_mr(&addr, writable!(float_scratch), size, MemFlags::trusted());
-//                     self.asm.xmm_mov_rm(float_scratch, &dst, size, flags);
-//                 }
-//                 I::F64(v) => {
-//                     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
-//                     let float_scratch = regs::scratch_xmm();
-//                     // Similar to above, always trusted since we are loading the
-//                     // constant from the constant pool.
-//                     self.asm
-//                         .xmm_mov_mr(&addr, writable!(float_scratch), size, MemFlags::trusted());
-//                     self.asm.xmm_mov_rm(float_scratch, &dst, size, flags);
-//                 }
-//                 I::V128(v) => {
-//                     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
-//                     let vector_scratch = regs::scratch_xmm();
-//                     // Always trusted, since we are loading the constant from
-//                     // the constant pool.
-//                     self.asm.xmm_mov_mr(
-//                         &addr,
-//                         writable!(vector_scratch),
-//                         size,
-//                         MemFlags::trusted(),
-//                     );
-//                     self.asm.xmm_mov_rm(vector_scratch, &dst, size, flags);
-//                 }
-//             },
-//             RegImm::Reg(reg) => {
-//                 if reg.is_int() {
-//                     self.asm.mov_rm(reg, &dst, size, flags);
-//                 } else {
-//                     self.asm.xmm_mov_rm(reg, &dst, size, flags);
-//                 }
-//             }
-//         };
-//         Ok(())
-//     }
+    /// A common implementation for stack stores.
+    fn store_impl(
+        &mut self,
+        src: RegImm,
+        dst: Address,
+        size: OperandSize,
+        flags: MemFlags,
+    ) -> Result<()> {
+        let _ = match src {
+            RegImm::Imm(imm) => match imm {
+                I::I32(v) => self.asm.mov_im(v as i32, &dst, size, flags),
+                I::I64(v) => match v.try_into() {
+                    Ok(v) => self.asm.mov_im(v, &dst, size, flags),
+                    Err(_) => {
+                        // If the immediate doesn't sign extend, use a scratch
+                        // register.
+                        let scratch = regs::scratch();
+                        self.asm.mov_ir(v, writable!(scratch), size);
+                        self.asm.mov_rm(scratch, &dst, size, flags);
+                    }
+                },
+                // I::F32(v) => {
+                //     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
+                //     let float_scratch = regs::scratch_xmm();
+                //     // Always trusted, since we are loading the constant from
+                //     // the constant pool.
+                //     self.asm
+                //         .xmm_mov_mr(&addr, writable!(float_scratch), size, MemFlags::trusted());
+                //     self.asm.xmm_mov_rm(float_scratch, &dst, size, flags);
+                // }
+                // I::F64(v) => {
+                //     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
+                //     let float_scratch = regs::scratch_xmm();
+                //     // Similar to above, always trusted since we are loading the
+                //     // constant from the constant pool.
+                //     self.asm
+                //         .xmm_mov_mr(&addr, writable!(float_scratch), size, MemFlags::trusted());
+                //     self.asm.xmm_mov_rm(float_scratch, &dst, size, flags);
+                // }
+                // I::V128(v) => {
+                //     let addr = self.asm.add_constant(v.to_le_bytes().as_slice());
+                //     let vector_scratch = regs::scratch_xmm();
+                //     // Always trusted, since we are loading the constant from
+                //     // the constant pool.
+                //     self.asm.xmm_mov_mr(
+                //         &addr,
+                //         writable!(vector_scratch),
+                //         size,
+                //         MemFlags::trusted(),
+                //     );
+                //     self.asm.xmm_mov_rm(vector_scratch, &dst, size, flags);
+                // }
+            },
+            RegImm::Reg(reg) => {
+                if reg.is_int() {
+                    self.asm.mov_rm(reg, &dst, size, flags);
+                } else {
+                    panic!("no support for floats")
+                    // self.asm.xmm_mov_rm(reg, &dst, size, flags);
+                }
+            }
+        };
+        Ok(())
+    }
 
     fn ensure_two_argument_form(dst: &Reg, lhs: &Reg) -> Result<()> {
         if dst != lhs {
