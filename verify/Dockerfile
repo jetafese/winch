@@ -33,7 +33,8 @@ RUN rustup install nightly-2022-08-01 && \
 rustup default nightly-2022-08-01 && \
 rustup component add rustfmt clippy
 
-RUN git clone https://github.com/jetafese/winch/
+WORKDIR /home/usea/
+COPY --chown=usea . winch 
 WORKDIR /home/usea/winch/
 RUN git checkout codegen
 # try to cache some of the work cargo does:
