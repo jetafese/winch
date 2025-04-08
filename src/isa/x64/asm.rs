@@ -1371,21 +1371,21 @@ impl Assembler {
         });
     }
 
-    // /// Load effective address.
-    // pub fn lea(&mut self, addr: &Address, dst: WritableReg, size: OperandSize) {
-    //     let addr = Self::to_synthetic_amode(
-    //         addr,
-    //         &mut self.pool,
-    //         &mut self.constants,
-    //         &mut self.buffer,
-    //         MemFlags::trusted(),
-    //     );
-    //     self.emit(Inst::LoadEffectiveAddress {
-    //         addr,
-    //         dst: dst.map(Into::into),
-    //         size: size.into(),
-    //     });
-    // }
+    /// Load effective address.
+    pub fn lea(&mut self, addr: &Address, dst: WritableReg, size: OperandSize) {
+        let addr = Self::to_synthetic_amode(
+            addr,
+            &mut self.pool,
+            // &mut self.constants,
+            &mut self.buffer,
+            MemFlags::trusted(),
+        );
+        self.emit(Inst::LoadEffectiveAddress {
+            addr,
+            dst: dst.map(Into::into),
+            size: size.into(),
+        });
+    }
 
     // pub fn adc_rr(&mut self, src: Reg, dst: WritableReg, size: OperandSize) {
     //     self.emit(Inst::AluRmiR {

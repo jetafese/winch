@@ -221,9 +221,9 @@ impl Masm for MacroAssembler {
         ))
     }
 
-//     fn address_at_sp(&self, offset: SPOffset) -> Result<Self::Address> {
-//         Ok(Address::offset(regs::rsp(), offset.as_u32()))
-//     }
+    fn address_at_sp(&self, offset: SPOffset) -> Result<Self::Address> {
+        Ok(Address::offset(regs::rsp(), offset.as_u32()))
+    }
 
 //     fn address_at_vmctx(&self, offset: u32) -> Result<Self::Address> {
 //         Ok(Address::offset(vmctx!(Self), offset))
@@ -271,7 +271,6 @@ impl Masm for MacroAssembler {
         stack_args_size: u32,
         mut load_callee: impl FnMut(&mut Self) -> Result<(CalleeKind, CallingConvention)>,
     ) -> Result<u32> {
-        // todo!() // visit_call + 1896
         let alignment: u32 = <Self::ABI as abi::ABI>::call_stack_align().into();
         let addend: u32 = <Self::ABI as abi::ABI>::arg_base_offset().into();
         let delta = calculate_frame_adjustment(self.sp_offset()?.as_u32(), addend, alignment);
@@ -293,10 +292,10 @@ impl Masm for MacroAssembler {
         self.load(src, dst, self.ptr_size)
     }
 
-//     fn load_addr(&mut self, src: Self::Address, dst: WritableReg, size: OperandSize) -> Result<()> {
-//         self.asm.lea(&src, dst, size);
-//         Ok(())
-//     }
+    fn load_addr(&mut self, src: Self::Address, dst: WritableReg, size: OperandSize) -> Result<()> {
+        self.asm.lea(&src, dst, size);
+        Ok(())
+    }
 
     fn load(&mut self, src: Address, dst: WritableReg, size: OperandSize) -> Result<()> {
         self.load_impl::<Self>(src, dst, size, TRUSTED_FLAGS)
