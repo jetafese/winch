@@ -760,9 +760,9 @@ pub trait MacroAssembler {
     /// offset)].
     fn address_from_sp(&self, offset: SPOffset) -> Result<Self::Address>;
 
-//     /// Constructs an address with an offset that is absolute to the
-//     /// current position of the stack pointer (e.g. [sp + offset].
-//     fn address_at_sp(&self, offset: SPOffset) -> Result<Self::Address>;
+    /// Constructs an address with an offset that is absolute to the
+    /// current position of the stack pointer (e.g. [sp + offset].
+    fn address_at_sp(&self, offset: SPOffset) -> Result<Self::Address>;
 
 //     /// Alias for [`Self::address_at_reg`] using the VMContext register as
 //     /// a base. The VMContext register is derived from the ABI type that is
@@ -823,13 +823,13 @@ pub trait MacroAssembler {
     /// to the pointer size of the target.
     fn load_ptr(&mut self, src: Self::Address, dst: WritableReg) -> Result<()>;
 
-//     /// Loads the effective address into destination.
-//     fn load_addr(
-//         &mut self,
-//         _src: Self::Address,
-//         _dst: WritableReg,
-//         _size: OperandSize,
-//     ) -> Result<()>;
+    /// Loads the effective address into destination.
+    fn load_addr(
+        &mut self,
+        _src: Self::Address,
+        _dst: WritableReg,
+        _size: OperandSize,
+    ) -> Result<()>;
 
     /// Pop a value from the machine stack into the given register.
     fn pop(&mut self, dst: WritableReg, size: OperandSize) -> Result<()>;

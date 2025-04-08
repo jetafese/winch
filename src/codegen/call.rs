@@ -117,17 +117,16 @@ impl FnCall {
         callee_sig: &ABISig,
         masm: &mut M,
     ) -> Result<Option<RetArea>> {
-        Ok(None)
-        // if callee_sig.has_stack_results() {
-        //     let base = masm.sp_offset()?.as_u32();
-        //     let end = base + callee_sig.results_stack_size();
-        //     if end > base {
-        //         masm.reserve_stack(end - base)?;
-        //     }
-        //     Ok(Some(RetArea::sp(SPOffset::from_u32(end))))
-        // } else {
-        //     Ok(None)
-        // }
+        if callee_sig.has_stack_results() {
+            let base = masm.sp_offset()?.as_u32();
+            let end = base + callee_sig.results_stack_size();
+            if end > base {
+                masm.reserve_stack(end - base)?;
+            }
+            Ok(Some(RetArea::sp(SPOffset::from_u32(end))))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Lowers the high-level [`Callee`] to a [`CalleeKind`] and
@@ -186,7 +185,6 @@ impl FnCall {
             // CalleeKind::direct(env.name_wasm(index)),
             CalleeKind::direct(UserExternalNameRef::new(0)),
             ContextArgs::pinned_callee_and_caller_vmctx(),
-            // ContextArgs::none(),
         )
     }
 
@@ -259,42 +257,42 @@ impl FnCall {
     //     ))
     // }
 
-    // /// Materializes any [ContextArgs] as a function argument.
-    // fn assign_context_args<M: MacroAssembler>(
-    //     sig: &ABISig,
-    //     context: &ContextArgs,
-    //     masm: &mut M,
-    // ) -> Result<()> {
-    //     ensure!(
-    //         sig.params().len() >= context.len(),
-    //         CodeGenError::vmcontext_arg_expected(),
-    //     );
-    //     for (context_arg, operand) in context
-    //         .as_slice()
-    //         .iter()
-    //         .zip(sig.params_without_retptr().iter().take(context.len()))
-    //     {
-    //         match (context_arg, operand) {
-    //             (VMContextLoc::Pinned, ABIOperand::Reg { ty, reg, .. }) => {
-    //                 masm.mov(writable!(*reg), vmctx!(M).into(), (*ty).try_into()?)?;
-    //             }
-    //             (VMContextLoc::Pinned, ABIOperand::Stack { ty, offset, .. }) => {
-    //                 let addr = masm.address_at_sp(SPOffset::from_u32(*offset))?;
-    //                 masm.store(vmctx!(M).into(), addr, (*ty).try_into()?)?;
-    //             }
+    /// Materializes any [ContextArgs] as a function argument.
+    fn assign_context_args<M: MacroAssembler>(
+        sig: &ABISig,
+        context: &ContextArgs,
+        masm: &mut M,
+    ) -> Result<()> {
+        ensure!(
+            sig.params().len() >= context.len(),
+            Error::msg("vmcontext_arg_expected"),
+        );
+        for (context_arg, operand) in context
+            .as_slice()
+            .iter()
+            .zip(sig.params_without_retptr().iter().take(context.len()))
+        {
+            match (context_arg, operand) {
+                (VMContextLoc::Pinned, ABIOperand::Reg { ty, reg, .. }) => {
+                    masm.mov(writable!(*reg), vmctx!(M).into(), (*ty).try_into()?)?;
+                }
+                (VMContextLoc::Pinned, ABIOperand::Stack { ty, offset, .. }) => {
+                    let addr = masm.address_at_sp(SPOffset::from_u32(*offset))?;
+                    masm.store(vmctx!(M).into(), addr, (*ty).try_into()?)?;
+                }
 
-    //             (VMContextLoc::Reg(src), ABIOperand::Reg { ty, reg, .. }) => {
-    //                 masm.mov(writable!(*reg), (*src).into(), (*ty).try_into()?)?;
-    //             }
+                (VMContextLoc::Reg(src), ABIOperand::Reg { ty, reg, .. }) => {
+                    masm.mov(writable!(*reg), (*src).into(), (*ty).try_into()?)?;
+                }
 
-    //             (VMContextLoc::Reg(src), ABIOperand::Stack { ty, offset, .. }) => {
-    //                 let addr = masm.address_at_sp(SPOffset::from_u32(*offset))?;
-    //                 masm.store((*src).into(), addr, (*ty).try_into()?)?;
-    //             }
-    //         }
-    //     }
-    //     Ok(())
-    // }
+                (VMContextLoc::Reg(src), ABIOperand::Stack { ty, offset, .. }) => {
+                    let addr = masm.address_at_sp(SPOffset::from_u32(*offset))?;
+                    masm.store((*src).into(), addr, (*ty).try_into()?)?;
+                }
+            }
+        }
+        Ok(())
+    }
 
     /// Assign arguments for the function call.
     fn assign<M: MacroAssembler>(
@@ -313,50 +311,49 @@ impl FnCall {
         let stack = &context.stack;
         let stack_values = stack.peekn(arg_count - callee_context.len());
 
-        // SEA_TODO: no arguments for now
-        // if callee_context.len() > 0 {
-        //     Self::assign_context_args(&sig, &callee_context, masm)?;
-        // }
+        if callee_context.len() > 0 {
+            Self::assign_context_args(&sig, &callee_context, masm)?;
+        }
 
-        // for (arg, val) in sig
-        //     .params_without_retptr()
-        //     .iter()
-        //     .skip(callee_context.len())
-        //     .zip(stack_values)
-        // {
-        //     match arg {
-        //         &ABIOperand::Reg { reg, .. } => {
-        //             context.move_val_to_reg(&val, reg, masm)?;
-        //         }
-        //         &ABIOperand::Stack { ty, offset, .. } => {
-        //             let addr = masm.address_at_sp(SPOffset::from_u32(offset))?;
-        //             let size: OperandSize = ty.try_into()?;
-        //             let scratch = scratch!(M, &ty);
-        //             context.move_val_to_reg(val, scratch, masm)?;
-        //             masm.store(scratch.into(), addr, size)?;
-        //         }
-        //     }
-        // }
+        for (arg, val) in sig
+            .params_without_retptr()
+            .iter()
+            .skip(callee_context.len())
+            .zip(stack_values)
+        {
+            match arg {
+                &ABIOperand::Reg { reg, .. } => {
+                    context.move_val_to_reg(&val, reg, masm)?;
+                }
+                &ABIOperand::Stack { ty, offset, .. } => {
+                    let addr = masm.address_at_sp(SPOffset::from_u32(offset))?;
+                    let size: OperandSize = ty.try_into()?;
+                    let scratch = scratch!(M, &ty);
+                    context.move_val_to_reg(val, scratch, masm)?;
+                    masm.store(scratch.into(), addr, size)?;
+                }
+            }
+        }
 
-        // if sig.has_stack_results() {
-        //     let operand = sig.params.unwrap_results_area_operand();
-        //     let base = ret_area.unwrap().unwrap_sp();
-        //     let addr = masm.address_from_sp(base)?;
+        if sig.has_stack_results() {
+            let operand = sig.params.unwrap_results_area_operand();
+            let base = ret_area.unwrap().unwrap_sp();
+            let addr = masm.address_from_sp(base)?;
 
-        //     match operand {
-        //         &ABIOperand::Reg { ty, reg, .. } => {
-        //             masm.load_addr(addr, writable!(reg), ty.try_into()?)?;
-        //         }
-        //         &ABIOperand::Stack { ty, offset, .. } => {
-        //             let slot = masm.address_at_sp(SPOffset::from_u32(offset))?;
-        //             // Don't rely on `ABI::scratch_for` as we always use
-        //             // an int register as the return pointer.
-        //             let scratch = scratch!(M);
-        //             masm.load_addr(addr, writable!(scratch), ty.try_into()?)?;
-        //             masm.store(scratch.into(), slot, ty.try_into()?)?;
-        //         }
-        //     }
-        // }
+            match operand {
+                &ABIOperand::Reg { ty, reg, .. } => {
+                    masm.load_addr(addr, writable!(reg), ty.try_into()?)?;
+                }
+                &ABIOperand::Stack { ty, offset, .. } => {
+                    let slot = masm.address_at_sp(SPOffset::from_u32(offset))?;
+                    // Don't rely on `ABI::scratch_for` as we always use
+                    // an int register as the return pointer.
+                    let scratch = scratch!(M);
+                    masm.load_addr(addr, writable!(scratch), ty.try_into()?)?;
+                    masm.store(scratch.into(), slot, ty.try_into()?)?;
+                }
+            }
+        }
         Ok(())
     }
 

@@ -1122,6 +1122,11 @@ pub mod isa {
                 simm32: i32,
                 dst: args::SyntheticAmode,
             },
+            LoadEffectiveAddress {
+                addr: args::SyntheticAmode,
+                dst: args::WritableGpr,
+                size: args::OperandSize,
+            },
             XmmUnaryRmRUnaligned {
                 op: args::SseOpcode,
                 src: args::XmmMem,
