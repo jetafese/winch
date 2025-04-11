@@ -220,7 +220,8 @@ impl ABIOperand {
 #[derive(Clone, Debug)]
 pub struct ABIOperands {
     /// All the operands.
-    pub inner: SmallVec<[ABIOperand; 0]>,
+    pub inner: NoResizableVec<ABIOperand>,
+    // pub inner: SmallVec<[ABIOperand; 0]>,
     // /// All the registers used as operands.
     // pub regs: HashSet<Reg>,
     /// Stack bytes used by the operands.
@@ -230,7 +231,8 @@ pub struct ABIOperands {
 impl Default for ABIOperands {
     fn default() -> Self {
         Self {
-            inner: Default::default(),
+            // inner: Default::default(),
+            inner: NoResizableVec::new(0),
             // regs: HashSet::with_capacity(0),
             bytes: 0,
         }
@@ -325,7 +327,8 @@ impl ABIResults {
             return Self::default();
         }
 
-        type FoldTuple = (SmallVec<[ABIOperand; 0]>, SmallVec<[Reg; 0]>, u32);
+        // type FoldTuple = (SmallVec<[ABIOperand; 0]>, SmallVec<[Reg; 0]>, u32);
+        type FoldTuple = (NoResizableVec<ABIOperand>, SmallVec<[Reg; 0]>, u32);
 
         let fold_impl = |(mut operands, mut regs, stack_bytes): FoldTuple, arg| {
             let (operand, bytes) = map(arg, stack_bytes);
@@ -355,7 +358,8 @@ impl ABIResults {
             //     // HashSet::with_capacity(1), 
             //     SmallVec::new(),
             //     0), fold_impl)
-            (SmallVec::new(), SmallVec::new(), 0)
+            (NoResizableVec::new(0), SmallVec::new(), 0)
+            // (SmallVec::new(), SmallVec::new(), 0)
         } else {
             // returns
             //     .iter()
@@ -363,7 +367,8 @@ impl ABIResults {
             //     SmallVec::new(),
             //     // HashSet::with_capacity(1), 
             //     0), fold_impl)
-            (SmallVec::new(), SmallVec::new(), 0)
+            (NoResizableVec::new(0), SmallVec::new(), 0)
+            // (SmallVec::new(), SmallVec::new(), 0)
         };
 
         // Similar to above, we reverse the result of the operands calculation
@@ -486,7 +491,8 @@ impl ABIParams {
         }
 
         let register_capacity = params.len().min(6);
-        let mut operands = SmallVec::new();
+        // let mut operands = SmallVec::new();
+        let mut operands = NoResizableVec::new(6);
         // let mut regs = HashSet::with_capacity(register_capacity);
         let mut stack_bytes = initial_bytes;
 
@@ -503,6 +509,7 @@ impl ABIParams {
             None
         };
 
+        // SEA_TODO: the successive calls to push is problematic for seahorn
         for arg in params.iter() {
             let (operand, bytes) = map(arg, stack_bytes);
             // if operand.is_reg() {

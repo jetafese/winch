@@ -31,15 +31,17 @@ mod cranelift_codegen;
 mod wasmtime_environ;
 mod regalloc2;
 mod target_lexicon;
+mod no_resizeable_vec;
 
 use cranelift_codegen::{ir::TrapCode, Writable};
 use masm::{DivKind, IntCmpKind, MacroAssembler, OperandSize, RegImm};
-use isa::{reg::{self, writable, Reg}, x64::abi::X64ABI};
+use isa::{reg::{self, writable, Reg}, x64::{abi::X64ABI, regs}};
 use crate::abi::ABI;
 use regalloc2::PReg;
 use regset::RegBitSet;
 use seahorn_stubs::{assert, assume, error, nondet_i32, nondet_i64, nondet_u32, nondet_u8};
-use smallvec::SmallVec;
+// use smallvec::SmallVec;
+use crate::no_resizeable_vec::NoResizableVec;
 use self::isa::x64::regs::{ALL_FPR, ALL_GPR, MAX_FPR, MAX_GPR, NON_ALLOCATABLE_FPR, NON_ALLOCATABLE_GPR};
 use stack::{Stack, TypedReg, Val};
 use frame::{DefinedLocals, Frame};
@@ -121,10 +123,10 @@ fn checked_uadd() {
 fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
     // let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
-    // SEA_TODO: needs a creative way to verify different signatures
+    // SEA_TODO: src/codegen/env.rs:callee_sig is where the action is
     let sig = WasmFuncType::new(
-        [].into(),
-        [].into(),
+        NoResizableVec::<WasmValType>::new(0),
+        NoResizableVec::<WasmValType>::new(0)
     );
     // let abi_sig = X64ABI::sig(&sig, &isa::CallingConvention::Default);
     let abi_sig = wasm_sig::<X64ABI>(&sig);

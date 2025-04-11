@@ -1,4 +1,5 @@
-use smallvec::SmallVec;
+// use smallvec::SmallVec;
+use crate::no_resizeable_vec::NoResizableVec;
 
 pub const FUNCREF_INIT_BIT: usize = 1;
 pub const FUNCREF_MASK: usize = !FUNCREF_INIT_BIT;
@@ -123,10 +124,10 @@ pub struct TypeIndex(u32);
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct WasmFuncType {
-    params: SmallVec<[WasmValType; 0]>,
+    params: NoResizableVec<WasmValType>,
     // params: Box<[WasmValType]>,
     // non_i31_gc_ref_params_count: usize,
-    returns: SmallVec<[WasmValType; 0]>,
+    returns: NoResizableVec<WasmValType>,
     // returns: Box<[WasmValType]>,
     // non_i31_gc_ref_returns_count: usize,
 }
@@ -134,7 +135,7 @@ pub struct WasmFuncType {
 impl WasmFuncType {
     /// Creates a new function type from the provided `params` and `returns`.
     #[inline]
-    pub fn new(params: SmallVec<[WasmValType; 0]>, returns: SmallVec<[WasmValType; 0]>) -> Self {
+    pub fn new(params: NoResizableVec<WasmValType>, returns: NoResizableVec<WasmValType>) -> Self {
         // let non_i31_gc_ref_params_count = params
         //     .iter()
         //     .filter(|p| p.is_vmgcref_type_and_not_i31())

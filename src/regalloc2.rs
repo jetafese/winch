@@ -28,8 +28,8 @@ impl PReg {
     pub const fn class(self) -> RegClass {
         match (self.bits >> Self::MAX_BITS) & 0b11 {
             0 => RegClass::Int,
-            1 => RegClass::Float,
-            2 => RegClass::Vector,
+            1 => panic!(),
+            2 => panic!(),
             _ => unreachable!(),
         }
     }

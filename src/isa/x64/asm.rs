@@ -58,7 +58,6 @@ impl From<Reg> for RegMemImm {
 
 // impl From<Reg> for crate::cranelift_codegen::Reg {
 //     fn from(reg: crate::isa::reg::Reg) -> Self {
-//         todo!()
 //         // reg.inner().into()
 //     }
 // }
