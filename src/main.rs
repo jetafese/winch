@@ -129,7 +129,7 @@ fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
         NoResizableVec::<WasmValType>::new(0)
     );
     // let abi_sig = X64ABI::sig(&sig, &isa::CallingConvention::Default);
-    let abi_sig = wasm_sig::<X64ABI>(&sig);
+    let abi_sig = wasm_sig::<X64ABI>(&sig, 0, 0);
     // SEA_TODO: should be able to pass values allocate nd locals
     let defined_locals = DefinedLocals::new::<X64ABI>();
     let frame = Frame::new::<X64ABI>(&abi_sig, &defined_locals.unwrap()).unwrap();
