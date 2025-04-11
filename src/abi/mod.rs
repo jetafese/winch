@@ -49,6 +49,8 @@ use crate::isa::x64::masm::ptr_type_from_ptr_size;
 // use crate::codegen::ptr_type_from_ptr_size;
 use crate::isa::{reg::Reg, CallingConvention};
 use crate::masm::SPOffset;
+use crate::no_resizeable_vec::NoResizableVec;
+use seahorn_stubs::assert;
 use smallvec::SmallVec;
 // use std::collections::HashSet;
 use core::ops::{Add, BitAnd, Not, Sub};
@@ -126,9 +128,9 @@ pub trait ABI {
 
     /// Construct the ABI-specific signature from a WebAssembly
     /// function type.
-    #[cfg(test)]
-    fn sig(wasm_sig: &WasmFuncType, call_conv: &CallingConvention) -> ABISig {
-        Self::sig_from(wasm_sig.params(), wasm_sig.returns(), call_conv)
+    // #[cfg(test)]
+    fn sig(wasm_sig: &WasmFuncType, call_conv: &CallingConvention, prms: usize, rets: usize) -> ABISig {
+        Self::sig_from(wasm_sig.params(), wasm_sig.returns(), call_conv, prms, rets)
     }
 
     /// Construct an ABI signature from WasmType params and returns.
