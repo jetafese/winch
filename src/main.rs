@@ -90,6 +90,7 @@ fn visitors() {
         8 => visit_i32_div_s(),
         9 => visit_cmp_ops(),
         10 => visit_call_0_0(),
+        11 => int_abi_sig_8_0(),
         _ => (),
     }
 }
@@ -387,4 +388,55 @@ fn visit_call_0_0() {
     // SEA_TODO: Need to run with bound=2 to ensure we hit next line
     // lines like zip of two iterators are problematic: src/codegen/call.rs:assign_context_args
     assert(false); 
+}
+
+#[no_mangle]
+fn int_abi_sig_8_0() {
+    let mut prms = NoResizableVec::<WasmValType>::new(8);
+    prms.push(I32);
+    prms.push(I64);
+    prms.push(I32);
+    prms.push(I64);
+    prms.push(I32);
+    prms.push(I32);
+    prms.push(I64);
+    prms.push(I32);
+    let rts = NoResizableVec::<WasmValType>::new(0);
+    let wasm_sig = WasmFuncType::new(prms, rts);
+    let sig = X64ABI::sig(&wasm_sig, &isa::CallingConvention::Default, 8, 0);
+    let params = sig.params;
+    match_reg_arg(params.get(0).unwrap(), I32, regs::rdi());
+    match_reg_arg(params.get(1).unwrap(), I64, regs::rsi());
+    match_reg_arg(params.get(2).unwrap(), I32, regs::rdx());
+    match_reg_arg(params.get(3).unwrap(), I64, regs::rcx());
+    match_reg_arg(params.get(4).unwrap(), I32, regs::r8());
+    match_reg_arg(params.get(5).unwrap(), I32, regs::r9());
+    match_stack_arg(params.get(6).unwrap(), I64, 0);
+    match_stack_arg(params.get(7).unwrap(), I32, 8);
+    //// should fail
+    // match_stack_arg(params.get(7).unwrap(), I64, 8);
+}
+
+#[track_caller]
+#[no_mangle]
+fn match_reg_arg(abi_arg: &abi::ABIOperand, expected_ty: WasmValType, expected_reg: Reg) {
+    match abi_arg {
+        &abi::ABIOperand::Reg { reg, ty, .. } => {
+            assert(reg == expected_reg);
+            assert(ty == expected_ty);
+        }
+        stack => panic!("Expected reg argument, got {stack:?}"),
+    }
+}
+
+#[track_caller]
+#[no_mangle]
+fn match_stack_arg(abi_arg: &abi::ABIOperand, expected_ty: WasmValType, expected_offset: u32) {
+    match abi_arg {
+        &abi::ABIOperand::Stack { offset, ty, .. } => {
+            assert_eq!(offset, expected_offset);
+            assert_eq!(ty, expected_ty);
+        }
+        reg => panic!("Expected stack argument, got {reg:?}"),
+    }
 }

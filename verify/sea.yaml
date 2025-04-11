@@ -49,3 +49,4 @@ verify_options:
 # time and result stats
   horn-stats: true
   verbose: 2
+  # bound: 2
