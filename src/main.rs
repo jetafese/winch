@@ -89,7 +89,7 @@ fn visitors() {
         7 => visit_i64_mul(),
         8 => visit_i32_div_s(),
         9 => visit_cmp_ops(),
-        10 => visit_call(),
+        10 => visit_call_0_0(),
         _ => (),
     }
 }
@@ -372,7 +372,7 @@ fn visit_cmp_ops() {
 }
 
 #[no_mangle]
-fn visit_call() {
+fn visit_call_0_0() {
     // setup context
     let vmoffsets = VMOffsets::new();
     let codegen_context = setup_context(&vmoffsets);
@@ -383,5 +383,8 @@ fn visit_call() {
     let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
     let func_index = FuncIndex::from_u32(index);
     let callee = Callee::Local(func_index);
-    FnCall::emit(&mut env, &mut masm, &mut emission_context, callee);
+    FnCall::emit(&mut env, &mut masm, &mut emission_context, callee, 0, 0);
+    // SEA_TODO: Need to run with bound=2 to ensure we hit next line
+    // lines like zip of two iterators are problematic: src/codegen/call.rs:assign_context_args
+    assert(false); 
 }

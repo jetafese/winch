@@ -155,7 +155,7 @@ impl<'a> CodeGenContext<'a, Emission> {
             I32 | I64 => self.reg_for_class(RegClass::Int, masm),
             // F32 | F64 => self.reg_for_class(RegClass::Float, masm),
             // All of our supported architectures use the float registers for vector operations.
-            V128 => self.reg_for_class(RegClass::Float, masm),
+            // V128 => self.reg_for_class(RegClass::Float, masm),
             Ref(rt) => match rt.heap_type {
                 WasmHeapType::Func | WasmHeapType::Extern => {
                     self.reg_for_class(RegClass::Int, masm)

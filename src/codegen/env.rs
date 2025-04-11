@@ -313,7 +313,7 @@ impl FuncEnv {
 //         self.table_access_spectre_mitigation
 //     }
 
-    pub(crate) fn callee_sig<'b, A>(&'b mut self, callee: &'b Callee) -> ABISig
+    pub(crate) fn callee_sig<'b, A>(&'b mut self, callee: &'b Callee, prms: usize, rets: usize) -> ABISig
     where
         A: ABI,
     {
@@ -328,11 +328,12 @@ impl FuncEnv {
                 //     wasm_sig::<A>(&ty)
                 // };
                 // self.resolved_callees.entry(*idx).or_insert_with(val)
-                let sig = WasmFuncType::new(
-                    [].into(),
-                    [].into(),
-                );
-                wasm_sig::<A>(&sig)
+                use crate::no_resizeable_vec::NoResizableVec;
+                use crate::WasmValType::{I32, I64};
+                let mut parameters = NoResizableVec::new(prms);
+                let mut returns = NoResizableVec::new(rets);
+                let sig = WasmFuncType::new(parameters, returns);
+                wasm_sig::<A>(&sig, prms, rets)
             }
             Callee::FuncRef(idx) => {
                 todo!()
