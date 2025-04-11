@@ -89,9 +89,10 @@ impl FnCall {
         masm: &mut M,
         context: &mut CodeGenContext<Emission>,
         callee: Callee,
+        prms: usize, rets: usize
     ) -> Result<()> {
         let (kind, callee_context) = Self::lower(env, context.vmoffsets, &callee, context, masm)?;
-        let sig = env.callee_sig::<M::ABI>(&callee);
+        let sig = env.callee_sig::<M::ABI>(&callee, prms, rets);
         context.spill(masm)?;
         let ret_area = Self::make_ret_area(&sig, masm)?;
         let arg_stack_space = sig.params_stack_size();

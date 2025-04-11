@@ -38,6 +38,7 @@ impl ABI for X64ABI {
         params: &[WasmValType],
         returns: &[WasmValType],
         call_conv: &CallingConvention,
+        prms: usize, rets: usize
     ) -> ABISig {
         assert!(call_conv.is_fastcall() || call_conv.is_systemv() || call_conv.is_default());
         let is_fastcall = call_conv.is_fastcall();
@@ -54,6 +55,7 @@ impl ABI for X64ABI {
         let results = Self::abi_results(returns, call_conv);
         let params = ABIParams::from::<_, Self>(
             params,
+            prms, rets,
             params_stack_offset,
             results.on_stack(),
             |ty, stack_offset| {

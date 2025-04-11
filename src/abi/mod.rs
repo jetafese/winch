@@ -88,13 +88,22 @@ pub(crate) use scratch;
 pub(crate) use vmctx;
 
 /// Constructs an [ABISig] using Winch's ABI.
-pub fn wasm_sig<A: ABI>(ty: &WasmFuncType) -> ABISig {
+pub fn wasm_sig<A: ABI>(ty: &WasmFuncType, prms: usize, rets: usize) -> ABISig {
     // 6 is used semi-arbitrarily here, we can modify as we see fit.
-    let mut params: SmallVec<[WasmValType; 0]> = SmallVec::new();
-    params.extend_from_slice(&vmctx_types::<A>());
-    params.extend_from_slice(ty.params());
+    // let mut params: SmallVec<[WasmValType; 0]> = SmallVec::new();
+    let mut params = NoResizableVec::<WasmValType>::new(6+prms);
+    // params.extend_from_slice(&vmctx_types::<A>());
+    // params.extend_from_slice(ty.params());
+    let special = vmctx_types::<A>();
+    params.push(special[0]);
+    params.push(special[1]);
+    if !ty.params().is_empty() {
+        for i in 0..ty.params().len()-1 {
+            params.insert(i+2, ty.params()[i]);
+        } 
+    }
 
-    A::sig_from(&params, ty.returns(), &CallingConvention::Default)
+    A::sig_from(&params, ty.returns(), &CallingConvention::Default, 6+prms, rets)
 }
 
 /// Returns the callee and caller [VMContext] types.
@@ -127,6 +136,7 @@ pub trait ABI {
         params: &[WasmValType],
         returns: &[WasmValType],
         call_conv: &CallingConvention,
+        prms: usize, rets: usize
     ) -> ABISig;
 
     /// Construct [`ABIResults`] from a slice of [`WasmType`].
@@ -479,6 +489,7 @@ impl ABIParams {
     /// stack depending on the calling convention.
     pub fn from<F, A: ABI>(
         params: &[WasmValType],
+        prms: usize, rets: usize,
         initial_bytes: u32,
         needs_stack_results: bool,
         mut map: F,
@@ -492,7 +503,7 @@ impl ABIParams {
 
         let register_capacity = params.len().min(6);
         // let mut operands = SmallVec::new();
-        let mut operands = NoResizableVec::new(6);
+        let mut operands = NoResizableVec::new(prms);
         // let mut regs = HashSet::with_capacity(register_capacity);
         let mut stack_bytes = initial_bytes;
 
