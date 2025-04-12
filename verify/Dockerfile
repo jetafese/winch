@@ -36,7 +36,7 @@ rustup component add rustfmt clippy
 WORKDIR /home/usea/
 COPY --chown=usea . winch 
 WORKDIR /home/usea/winch/
-RUN git checkout codegen
+RUN git checkout main
 # try to cache some of the work cargo does:
 RUN sh -c 'find . -mindepth 1 ! -name "Cargo.toml" ! -name "Cargo.lock" ! -path "./.git*" -exec rm -rf {} +'
 RUN mkdir -p src && echo "fn main() {}" > src/main.rs
