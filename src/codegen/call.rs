@@ -57,18 +57,14 @@
 //! └──────────────────────────────────────────────────┘ ------> Stack pointer when emitting the call
 
 use crate::{
-    abi::{scratch, vmctx, ABIOperand, ABISig, RetArea},
-    codegen::{
+    abi::{scratch, vmctx, ABIOperand, ABISig, RetArea}, codegen::{
         // BuiltinFunction, BuiltinType, CodeGenError, 
-        Callee, CodeGenContext, Emission}, 
-    cranelift_codegen::ir::UserExternalNameRef, 
-    masm::{
-        CalleeKind, ContextArgs, MacroAssembler, OperandSize, SPOffset,
-        VMContextLoc, MemMoveDirection
-    }, 
-    stack::Val, writable, FuncEnv
+        Callee, CodeGenContext, Emission}, cranelift_codegen::ir::UserExternalNameRef, masm::{
+        CalleeKind, ContextArgs, MacroAssembler, MemMoveDirection, OperandSize, SPOffset, VMContextLoc
+    }, no_resizeable_vec::NoResizableVec, stack::Val, writable, FuncEnv
 };
 use anyhow::{ensure, Error, Result};
+use seahorn_stubs::assert;
 use crate::wasmtime_environ::{FuncIndex, PtrSize, VMOffsets};
 
 /// All the information needed to emit a function call.
@@ -306,9 +302,7 @@ impl FnCall {
         let arg_count = sig.params.len_without_retptr();
         debug_assert!(arg_count >= callee_context.len());
         // SEA_TODO: make debug assert explicit
-        if !(arg_count >= callee_context.len()) {
-            todo!()
-        }
+        assert(arg_count >= callee_context.len());
         let stack = &context.stack;
         let stack_values = stack.peekn(arg_count - callee_context.len());
 

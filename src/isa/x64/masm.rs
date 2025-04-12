@@ -61,7 +61,7 @@ pub fn ptr_type_from_ptr_size(size: u8) -> WasmValType {
 // pub type Result<T, E = Error> = core::result::Result<T, E>;
 
 /// x64 MacroAssembler.
-pub(crate) struct MacroAssembler {
+pub struct MacroAssembler {
     /// Stack pointer offset.
     sp_offset: u32,
     /// This value represents the maximum stack size seen while compiling the function. While the
