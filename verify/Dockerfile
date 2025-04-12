@@ -42,6 +42,8 @@ RUN sh -c 'find . -mindepth 1 ! -name "Cargo.toml" ! -name "Cargo.lock" ! -path 
 RUN mkdir -p src && echo "fn main() {}" > src/main.rs
 RUN sed -i '/seahorn/d' Cargo.toml
 RUN sed -i '/libc/d' Cargo.toml
+RUN sed -i '/bin/d' Cargo.toml
+RUN sed -i '/visit_*/d' Cargo.toml
 RUN RUSTFLAGS=--emit=llvm-ir cargo build --release
 RUN rm -rf src
 RUN git reset --hard HEAD
