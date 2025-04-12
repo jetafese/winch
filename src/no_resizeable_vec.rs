@@ -366,4 +366,4 @@ macro_rules! cvt_no_resizable_vec {
 
 pub use cvt_no_resizable_vec;
 
-use crate::ALLOCATOR;
+use crate::proof_core::ALLOCATOR;
