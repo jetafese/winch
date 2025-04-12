@@ -2,16 +2,24 @@
 
 rust-host := `rustc -vV | sed -n 's|host: ||p'`
 
-all: clean build verify
+all PROOF='visit_setup':
+	cargo clean
+	just prove {{PROOF}}
 
-build:
-	RUSTFLAGS=--emit=llvm-ir cargo build --release --target={{rust-host}}
+prove PROOF='visit_setup':
+	just build {{PROOF}}
+	just verify {{PROOF}} 
 
-verify SEA='../seahorn/bin/sea' YAML='verify/sea.yaml':
-	{{SEA}} yama -y {{YAML}} bpf `ls target/{{rust-host}}/release/deps/winch_codegen*.ll | head -n 1`
+build PROOF='visit_setup':
+	RUSTFLAGS=--emit=llvm-ir cargo build --release --target={{rust-host}} --bin {{PROOF}}
+
+verify PROOF='visit_setup' SEA='../seahorn/bin/sea' YAML='verify/sea.yaml':
+	{{SEA}} yama -y {{YAML}} bpf `ls target/{{rust-host}}/release/deps/{{PROOF}}*.ll | head -n 1` --cex=/tmp/winch/{{PROOF}}.ll
 
 clean:
 	cargo clean
+	rm -f exec.out
 
-debug SEA_LIB='../seahorn/lib/libsea-rt.a':
-	clang++ `ls target/{{rust-host}}/release/deps/winch_codegen*.ll | head -n 1` /tmp/winch/h.ll {{SEA_LIB}} -o exec.out
+debug PROOF='visit_setup' SEA_LIB='../seahorn/lib/libsea-rt.a':
+	rm -f exec.out
+	clang++ `ls target/{{rust-host}}/release/deps/{{PROOF}}*.ll | head -n 1` /tmp/winch/{{PROOF}}.ll {{SEA_LIB}} -o exec.out
