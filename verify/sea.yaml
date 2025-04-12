@@ -43,7 +43,7 @@ verify_options:
   keep-temps: ''
   temp-dir: /tmp/winch
 # produce counterexample harness
-  cex: /tmp/winch/h.ll
+#  cex: /tmp/winch/h.ll
 # printable counterexample log
   log: cex
 # time and result stats

@@ -31,3 +31,19 @@ lto = "fat"
 opt-level = 0
 debug = 2
 # -Warithmetic-overflow -Coverflow-checks=yes -Cpanic=abort
+
+[[bin]]
+name = "visit_cmp_ops"
+path = "src/visit_cmp_ops.rs"
+
+[[bin]]
+name = "visit_setup"
+path = "src/visit_setup.rs"
+
+[[bin]]
+name = "visit_arith"
+path = "src/visit_arith.rs"
+
+[[bin]]
+name = "visit_funcs"
+path = "src/visit_funcs.rs"
