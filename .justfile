@@ -10,11 +10,18 @@ prove PROOF='visit_setup':
 	just build {{PROOF}}
 	just verify {{PROOF}} 
 
+bproof PROOF='visit_setup' BOUND='2':
+	just build {{PROOF}}
+	just bound {{PROOF}} {{BOUND}}
+
 build PROOF='visit_setup':
 	RUSTFLAGS=--emit=llvm-ir cargo build --release --target={{rust-host}} --bin {{PROOF}}
 
 verify PROOF='visit_setup' SEA='../seahorn/bin/sea' YAML='verify/sea.yaml':
 	{{SEA}} yama -y {{YAML}} bpf `ls target/{{rust-host}}/release/deps/{{PROOF}}*.ll | head -n 1` --cex=/tmp/winch/{{PROOF}}.ll
+
+bound PROOF='visit_setup' BOUND='2' SEA='../seahorn/bin/sea' YAML='verify/sea.yaml':
+	{{SEA}} yama -y {{YAML}} bpf `ls target/{{rust-host}}/release/deps/{{PROOF}}*.ll | head -n 1` --cex=/tmp/winch/{{PROOF}}.ll --bound={{BOUND}}
 
 clean:
 	cargo clean
