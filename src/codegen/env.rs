@@ -319,6 +319,25 @@ impl FuncEnv {
     {
         match callee {
             Callee::Local(idx) | Callee::Import(idx) => {
+                use crate::no_resizeable_vec::NoResizableVec;
+                use crate::WasmValType::{I32, I64};
+                let mut parameters = NoResizableVec::new(prms);
+                if idx == &FuncIndex::from_u32(1) {
+                    // 8 params for func index 1
+                    parameters.push(I32);
+                    parameters.push(I64);
+                    parameters.push(I32);
+                    parameters.push(I64);
+                    parameters.push(I32);
+                    parameters.push(I32);
+                    parameters.push(I64);
+                    parameters.push(I32);
+                } else {
+                    // no params for all other func indexes
+                }
+                let mut returns = NoResizableVec::new(rets);
+                let sig = WasmFuncType::new(parameters, returns);
+                wasm_sig::<A>(&sig, prms, rets)
                 // let types = self.translation.get_types();
                 // let types = types.as_ref();
                 // let ty = types[types.core_function_at(idx.as_u32())].unwrap_func();
@@ -328,12 +347,6 @@ impl FuncEnv {
                 //     wasm_sig::<A>(&ty)
                 // };
                 // self.resolved_callees.entry(*idx).or_insert_with(val)
-                use crate::no_resizeable_vec::NoResizableVec;
-                use crate::WasmValType::{I32, I64};
-                let mut parameters = NoResizableVec::new(prms);
-                let mut returns = NoResizableVec::new(rets);
-                let sig = WasmFuncType::new(parameters, returns);
-                wasm_sig::<A>(&sig, prms, rets)
             }
             Callee::FuncRef(idx) => {
                 todo!()

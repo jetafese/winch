@@ -44,11 +44,15 @@ use wasmtime_environ::{FuncIndex, VMOffsets, WasmFuncType, WasmRefType, WasmValT
 pub extern fn main() -> i32 {
     let v = nondet_u8();
     match v {
-        0 => visit_call_0_0(),
-        _ => int_abi_sig_8_0(),
+       0 => visit_call_0_0(),
+       1 => visit_call_8_0(),
+       _ => int_abi_sig_8_0(),
     }
     return 0;
 }
+
+// We have arranged for func index 0 to have 0 args and 0 returns,
+// and func index 1 to have 8 args and 0 returns.
 
 #[no_mangle]
 fn visit_call_0_0() {
@@ -58,7 +62,7 @@ fn visit_call_0_0() {
     let mut emission_context = codegen_context.for_emission();
     let mut masm = proof_core::setup_masm();
     // SUT
-    let index = nondet_u32();
+    let index = 0; // the 0-0 function
     let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
     let func_index = FuncIndex::from_u32(index);
     let callee = Callee::Local(func_index);
@@ -66,6 +70,24 @@ fn visit_call_0_0() {
     // SEA_TODO: Need to run with bound=2 to ensure we hit next line when in debug mode
     // lines like zip of two iterators are problematic: src/codegen/call.rs:assign_context_args
     assert(false); 
+}
+
+#[no_mangle]
+fn visit_call_8_0() {
+    // setup context
+    let vmoffsets = VMOffsets::new();
+    let codegen_context = proof_core::setup_context(&vmoffsets);
+    let mut emission_context = codegen_context.for_emission();
+    let mut masm = proof_core::setup_masm();
+    // SUT
+    let index = 1; // the 8-0 function
+    let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
+    let func_index = FuncIndex::from_u32(index);
+    let callee = Callee::Local(func_index);
+    FnCall::emit(&mut env, &mut masm, &mut emission_context, callee, 8, 0);
+    // SEA_TODO: Need to run with bound=2 to ensure we hit next line when in debug mode
+    // lines like zip of two iterators are problematic: src/codegen/call.rs:assign_context_args
+    assert(false)
 }
 
 #[no_mangle]
