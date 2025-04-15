@@ -100,11 +100,11 @@ pub fn wasm_sig<A: ABI>(ty: &WasmFuncType, prms: usize, rets: usize) -> ABISig {
     params.push(special[0]);
     params.push(special[1]);
     if !ty.params().is_empty() {
-        for i in 0..ty.params().len()-1 {
+        for i in 0..ty.params().len() {
             params.insert(i+2, ty.params()[i]);
         } 
     }
-
+    assert(params.len() == prms+2);
     A::sig_from(&params, ty.returns(), &CallingConvention::Default, 6+prms, rets)
 }
 
