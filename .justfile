@@ -25,8 +25,8 @@ bound PROOF='visit_setup' BOUND='2' SEA='../seahorn/bin/sea' YAML='verify/sea.ya
 
 clean:
 	cargo clean
-	rm -f exec.out
+	rm -f exec.out error.txt harness.ll
 
 debug PROOF='visit_setup' SEA_LIB='../seahorn/lib/libsea-rt.a':
-	rm -f exec.out
-	clang++ `ls target/{{rust-host}}/release/deps/{{PROOF}}*.ll | head -n 1` /tmp/winch/{{PROOF}}.ll {{SEA_LIB}} -o exec.out
+	rm -f exec.out error.txt harness.ll
+	python verify/harness.py {{PROOF}} {{SEA_LIB}} `ls target/{{rust-host}}/release/deps/{{PROOF}}*.ll | head -n 1`
