@@ -84,6 +84,15 @@ fn visit_call_8_0() {
     let mut env = FuncEnv::new(vmoffsets, WasmValType::Ref(WasmRefType::FUNCREF));
     let func_index = FuncIndex::from_u32(index);
     let callee = Callee::Local(func_index);
+    // invariant: ensure stack has parameters
+    emission_context.stack.push(Val::I32(0));
+    emission_context.stack.push(Val::I64(0));
+    emission_context.stack.push(Val::I32(0));
+    emission_context.stack.push(Val::I64(0));
+    emission_context.stack.push(Val::I32(0));
+    emission_context.stack.push(Val::I32(0));
+    emission_context.stack.push(Val::I64(0));
+    emission_context.stack.push(Val::I32(0));
     FnCall::emit(&mut env, &mut masm, &mut emission_context, callee, 8, 0);
     // SEA_TODO: Need to run with bound=2 to ensure we hit next line when in debug mode
     // lines like zip of two iterators are problematic: src/codegen/call.rs:assign_context_args
