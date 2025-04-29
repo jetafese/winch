@@ -2101,35 +2101,35 @@ where
     //         .unsigned_truncate(&mut self.context, S64, S64, TruncKind::Checked)
     // }
 
-    fn visit_i64_add128(&mut self) -> Self::Output {
-        self.context
-            .binop128(self.masm, |masm, lhs_lo, lhs_hi, rhs_lo, rhs_hi| {
-                masm.add128(
-                    writable!(lhs_lo),
-                    writable!(lhs_hi),
-                    lhs_lo,
-                    lhs_hi,
-                    rhs_lo,
-                    rhs_hi,
-                )?;
-                Ok((TypedReg::i64(lhs_lo), TypedReg::i64(lhs_hi)))
-            })
-    }
+    // fn visit_i64_add128(&mut self) -> Self::Output {
+    //     self.context
+    //         .binop128(self.masm, |masm, lhs_lo, lhs_hi, rhs_lo, rhs_hi| {
+    //             masm.add128(
+    //                 writable!(lhs_lo),
+    //                 writable!(lhs_hi),
+    //                 lhs_lo,
+    //                 lhs_hi,
+    //                 rhs_lo,
+    //                 rhs_hi,
+    //             )?;
+    //             Ok((TypedReg::i64(lhs_lo), TypedReg::i64(lhs_hi)))
+    //         })
+    // }
 
-    fn visit_i64_sub128(&mut self) -> Self::Output {
-        self.context
-            .binop128(self.masm, |masm, lhs_lo, lhs_hi, rhs_lo, rhs_hi| {
-                masm.sub128(
-                    writable!(lhs_lo),
-                    writable!(lhs_hi),
-                    lhs_lo,
-                    lhs_hi,
-                    rhs_lo,
-                    rhs_hi,
-                )?;
-                Ok((TypedReg::i64(lhs_lo), TypedReg::i64(lhs_hi)))
-            })
-    }
+    // fn visit_i64_sub128(&mut self) -> Self::Output {
+    //     self.context
+    //         .binop128(self.masm, |masm, lhs_lo, lhs_hi, rhs_lo, rhs_hi| {
+    //             masm.sub128(
+    //                 writable!(lhs_lo),
+    //                 writable!(lhs_hi),
+    //                 lhs_lo,
+    //                 lhs_hi,
+    //                 rhs_lo,
+    //                 rhs_hi,
+    //             )?;
+    //             Ok((TypedReg::i64(lhs_lo), TypedReg::i64(lhs_hi)))
+    //         })
+    // }
 
     fn visit_i64_mul_wide_s(&mut self) -> Self::Output {
         self.masm.mul_wide(&mut self.context, MulWideKind::Signed)
