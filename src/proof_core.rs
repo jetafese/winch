@@ -45,7 +45,6 @@ pub fn panic(_panic: &PanicInfo<'_>) -> ! {
 
 #[no_mangle]
 pub fn setup_context<'a>(vmoffsets: &'a VMOffsets) -> CodeGenContext<'a, Prologue> {
-    // let vmoffsets = VMOffsets::new();
     let stack = Stack::new();
     // SEA_TODO: src/codegen/env.rs:callee_sig is where the action is
     let sig = WasmFuncType::new(

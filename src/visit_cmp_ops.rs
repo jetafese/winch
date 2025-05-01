@@ -51,14 +51,42 @@ fn visit_cmp_ops() {
     let mut emission_context = codegen_context.for_emission();
     let mut masm = proof_core::setup_masm();
     // SUT
-    // invariant: top value on stack can be const/reg, second value should be dst reg
+    // invariant: second stack value should be dst reg
     let dst = Reg(PReg::new(2, regalloc2::RegClass::Int));
-    emission_context.stack.push(Val::Reg(TypedReg::i64(dst)));
-    let val = nondet_i64();
-    emission_context.stack.push(Val::I64(val));
+    emission_context.stack.push(Val::Reg(TypedReg::i32(dst)));
     // select operation
+    let kind = symbol_kind();
+    // call functions by operation width
+    let v2 = nondet_u8();
+    let res = match v2 {
+        0 => {
+            // invariant: top value on stack can be const/reg
+            let val = nondet_i32();
+            emission_context.stack.push(Val::I32(val));
+            emission_context.i32_binop(&mut masm, |masm, dst, src, size| {
+                masm.cmp_with_set(writable!(dst), src, kind, size)?;
+                Ok(TypedReg::i32(dst))
+            })
+        },
+        _ => {
+            // invariant: top value on stack can be const/reg
+            let val = nondet_i64();
+            emission_context.stack.push(Val::I64(val));
+            emission_context.i64_binop(&mut masm, |masm, dst, src, size| {
+                masm.cmp_with_set(writable!(dst), src, kind, size)?;
+                Ok(TypedReg::i32(dst)) // Return value for cmp is an `i32`.
+            })
+        },
+    };
+    assert(res.is_ok());
+    emission_context.stack.peek().expect("value at stack top");
+    emission_context.stack.pop().unwrap().is_i32_const();
+    assert(emission_context.stack.inner().is_empty());
+}
+
+fn symbol_kind() -> IntCmpKind {
     let v = nondet_u8();
-    let kind = match v {
+    match v {
         0 => IntCmpKind::Eq,
         1 => IntCmpKind::Ne,
         2 => IntCmpKind::GeS,
@@ -69,25 +97,5 @@ fn visit_cmp_ops() {
         7 => IntCmpKind::LeU,
         8 => IntCmpKind::LtS,
         _ => IntCmpKind::LtU,
-    };
-    // call functions
-    let v2 = nondet_u8();
-    let res = match v2 {
-        0 => {
-            emission_context.i32_binop(&mut masm, |masm, dst, src, size| {
-                masm.cmp_with_set(writable!(dst), src, kind, size)?;
-                Ok(TypedReg::i32(dst))
-            })
-        },
-        _ => {
-            emission_context.i64_binop(&mut masm, move |masm, dst, src, size| {
-                masm.cmp_with_set(writable!(dst), src, kind, size)?;
-                Ok(TypedReg::i32(dst)) // Return value for comparisons is an `i32`.
-            })
-        },
-    };
-    assert(res.is_ok());
-    emission_context.stack.peek().expect("value at stack top");
-    emission_context.stack.pop();
-    assert(emission_context.stack.inner().is_empty());
+    }
 }
