@@ -67,4 +67,4 @@ At the moment, we expect to get unsat for all proof categories since none of the
 
 Removing any of the invariants in the proofs will result in a panic path. We show this in the demo below:
 
-![](assets/visit_setup.gif)
+![](assets/visit_setup_2.gif)
