@@ -67,6 +67,6 @@ Once in the docker, use the `just` command at the top level directory to get a c
 
 At the moment, we expect to get unsat for all proof categories since none of the functions have a path that leads to a panic.
 
-Removing any of the invariants in the proofs will result in a panic path. We show this in the demo below:
+Removing any of the invariants in the proofs will result in a panic path. We show this in the demo below. The full demo, including how we use SeaHorn's counter example generation for debugging can be found [here](assets/visit_setup.mp4).
 
-![](assets/visit_setup_2.gif)
+![](assets/visit_setup_intro.gif)
