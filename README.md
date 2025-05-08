@@ -49,7 +49,9 @@ The proof collection names also function as their target name when running the p
 
 ## Docker
 
-This is the recommended way to get started with the project. From the top level directory, build the project with:
+This is the recommended way to get started with the project. We expect it to work on machines that support docker images for x86_64. Our tests were also run on an M3 mac with no issues.
+
+From the top level directory, build the project with:
 ```
 docker build -t winch . --file verify/Dockerfile
 ```
